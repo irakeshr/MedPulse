@@ -1,0 +1,26 @@
+import axios from "axios";
+ 
+
+export const CommonApi = async (httpMethod, url, reqBody) => {
+  const token = localStorage.getItem("Token");
+
+  const headers = {
+    "Content-Type": "application/json",
+    Authorization: token ? `Bearer ${token}` : "",
+  };
+
+  const configReq = {
+    method: httpMethod,
+    url,
+    data: reqBody,
+    headers,
+  };
+  console.log(configReq)
+  return await axios(configReq)
+    .then((res) => {
+      return res;
+    })
+    .catch((err) => {
+      console.log(err);
+    });
+};
