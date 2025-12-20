@@ -6,7 +6,7 @@ export const CommonApi = async (httpMethod, url, reqBody) => {
 
   const headers = {
     "Content-Type": "application/json",
-    Authorization: token ? `Bearer ${token}` : "",
+    Authorization: token ? `Bearer ${token}` : "one",
   };
 
   const configReq = {

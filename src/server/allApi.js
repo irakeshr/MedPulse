@@ -10,3 +10,7 @@ export const userLogin = async (reqBody) => {
 export const userGoogleLogin = async (reqBody) => {
   return await CommonApi("POST", `${SERVER_URL}/auth/googleLogin`, reqBody);
 };
+export const tokenValidation =async()=>{
+  return await CommonApi("GET", `${SERVER_URL}/auth/validate-token`);
+
+}
