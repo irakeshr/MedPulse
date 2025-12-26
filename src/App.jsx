@@ -12,6 +12,7 @@ import DoctorDashboard from './Doctor/pages/DoctorDashboard';
 import DoctorLayout from './Doctor/pages/DoctorLayout';
 import HomePage from './pages/HomePage';
 import ProtectedRoute from './routes/ProtectedRoute';
+import DoctorRoute from './routes/DoctorRoute';
 
 const App = () => {
   return (
@@ -33,16 +34,15 @@ const App = () => {
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/doctors" element={<FindDoctorPage />} />
         </Route>
-
-          <Route element={<DoctorLayout />}>
-          <Route path="/doctor/dashboard" element={<DoctorDashboard />} />
-        </Route>
-
       </Route>
 
       {/* PROTECTED DOCTOR ROUTES */}
     
-      
+       <Route element={<DoctorRoute/>}>
+ <Route element={<DoctorLayout />}>
+          <Route path="/doctor/dashboard" element={<DoctorDashboard />} />
+        </Route>
+        </Route>
        
 
     </Routes>

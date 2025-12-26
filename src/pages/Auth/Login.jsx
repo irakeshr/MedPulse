@@ -1,12 +1,10 @@
 import React, { useState } from "react";
-import { ToastContainer,toast } from "react-toastify";
+import { ToastContainer, toast } from "react-toastify";
 import { userLogin, userRegister } from "../../server/allApi";
-import 'react-toastify/dist/ReactToastify.css';
+import "react-toastify/dist/ReactToastify.css";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
-import { loginSuccess } from "../../redux/authSlice";
-
- 
+import { loginSuccess, setUser } from "../../redux/authSlice";
 
 const Login = ({ setRegisterPage }) => {
   const dispatch = useDispatch();
@@ -23,45 +21,43 @@ const Login = ({ setRegisterPage }) => {
     });
   };
 
-  const handleLogin=async()=>{
-
-  
-    const {email,password}= loginDetails;
-    if(!email || !password){
-       toast.warning("Please fill in all fields.");
-              return;
+  const handleLogin = async () => {
+    const { email, password } = loginDetails;
+    if (!email || !password) {
+      toast.warning("Please fill in all fields.");
+      return;
     }
-     try{
+    try {
       const res = await userLogin(loginDetails);
-      if(res.status===200){
-          localStorage.setItem("Token", res.data.token);
-        toast.success("Login Success!!")
-        dispatch(loginSuccess())
-        if(res.data.role=="doctor"){
-          setTimeout(()=>{
- navigate("/doctor/dashboard")
- },1500)
-        }else if(res.data.role=="patient"){
- setTimeout(()=>{
- navigate("/me")
- },1500)
-        }else{
- toast.error("Unknown role. Please contact support.");
+      if (res.status === 200) {
+        localStorage.setItem("Token", res.data.token);
+        toast.success("Login Success!!");
+        dispatch(loginSuccess());
+        if (res.data.role == "doctor") {
+          setTimeout(() => {
+            navigate("/doctor/dashboard");
+          }, 1500);
+        } else if (res.data.role == "patient") {
+          setTimeout(() => {
+            navigate("/me");
+          }, 1500);
+        } else {
+          toast.error("Unknown role. Please contact support.");
         }
-      }else {
-              toast.error("Registration failed. Please try again.");
-            }
-     }catch(error){
-        const errorMessage = error.response?.data?.message || "Something went wrong during login.";
-            toast.error(errorMessage);
-     }
-  }
+      } else {
+        toast.error("Registration failed. Please try again.");
+      }
+    } catch (error) {
+      const errorMessage =
+        error.response?.data?.message || "Something went wrong during login.";
+      toast.error(errorMessage);
+    }
+  };
 
   return (
-    < div >
+    <div>
       <ToastContainer position="top-center" autoClose={3000} />
       <div className="relative z-10 w-full max-w-[440px] bg-white dark:bg-[#1a2c2c] rounded-2xl shadow-xl border border-gray-100 dark:border-[#2a3838] overflow-hidden">
-        
         <div className="pt-5 pb-2 px-8 flex flex-col items-center text-center">
           <div className="mb-6 bg-primary/10 p-3 rounded-full text-primary">
             <svg
@@ -135,7 +131,6 @@ const Login = ({ setRegisterPage }) => {
               <button
                 className="absolute inset-y-0 right-0 pr-4 flex items-center text-med-text-secondary hover:text-med-dark dark:hover:text-white transition-colors"
                 type="button"
-
               >
                 <span className="material-symbols-outlined text-[20px]">
                   visibility_off
@@ -148,7 +143,6 @@ const Login = ({ setRegisterPage }) => {
               <input
                 className="rounded border-gray-300 text-primary focus:ring-primary/20 w-4 h-4 transition-all"
                 type="checkbox"
-                
               />
               <span className="text-med-text-secondary dark:text-gray-400 group-hover:text-med-dark dark:group-hover:text-gray-300 transition-colors">
                 Remember me
@@ -161,9 +155,10 @@ const Login = ({ setRegisterPage }) => {
               Forgot Password?
             </a>
           </div>
-          <button className="w-full bg-primary hover:bg-[#0fdbdb] text-med-dark font-bold text-sm py-3.5 rounded-xl shadow-lg shadow-primary/20 hover:shadow-primary/30 active:scale-[0.98] transition-all duration-200 mt-2"
-          onClick={handleLogin}
-          type="button"
+          <button
+            className="w-full bg-primary hover:bg-[#0fdbdb] text-med-dark font-bold text-sm py-3.5 rounded-xl shadow-lg shadow-primary/20 hover:shadow-primary/30 active:scale-[0.98] transition-all duration-200 mt-2"
+            onClick={handleLogin}
+            type="button"
           >
             Log In
           </button>

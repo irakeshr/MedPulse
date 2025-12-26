@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import PostCard from "../components/PostCard"; // Adjust path as needed
 import DoctorModal from "../components/DoctorModal";
 import { useState } from "react";
+import { useSelector } from "react-redux";
+import CreatePostForm from "../components/CreatePostForm";
  
 
 // --- MOCK DATA FOR FEED ---
@@ -105,8 +107,6 @@ const DOCTORS = [
 
 const FeedPage = () => {
   const [selectedDoctor, setSelectedDoctor] = useState(null);
-  
-
   return (
     // MAIN LAYOUT CONTAINER
     <div className="flex justify-center items-start gap-6 w-full px-4 lg:px-8 py-6">
@@ -114,52 +114,7 @@ const FeedPage = () => {
 
       <main className="flex flex-col w-full max-w-[720px] gap-6">
         {/* --- Composer Section --- */}
-        <div className="bg-white dark:bg-[#1a2c2c] rounded-2xl p-4 shadow-sm border border-[#e5e7eb] dark:border-[#2a3838]">
-          <div className="flex gap-4">
-            <div
-              className="bg-center bg-no-repeat bg-cover rounded-full size-12 shrink-0 border border-gray-100 dark:border-gray-700"
-              style={{
-                backgroundImage:
-                  'url("https://lh3.googleusercontent.com/aida-public/AB6AXuCUyJhcQQkJaNYmDJASe4NALB-H2j15Rr9tCtmyExU4rO5Mw0OXnGKvXlk96HvSgY5I4kFdtsWoQ4r1A5ldq_9NCygmj7kHhapBYTk36dVNvokLY5gxlB3CDAtQpp971jx9K3ihMYcnFS8vkUCH2LsRV6ejDsHJvniI__RZTHjMuc6-QIXDHfzvI07lP31ti8PrcoRWnjkvjZRsmPQGVgxHJOzYn8eJ_jmFjCGmX2rZ91ODUL8i9xfzLUXkEfalwNXtymDLjZUEkWI")',
-              }}
-            ></div>
-            <div className="flex-1">
-              <textarea
-                className="w-full bg-med-gray dark:bg-[#253636] rounded-xl p-3 text-sm min-h-[80px] border-none focus:ring-1 focus:ring-primary/50 resize-none placeholder:text-med-text-secondary dark:placeholder:text-gray-500 text-med-dark dark:text-white"
-                placeholder="Describe your symptoms... What are you feeling?"
-              ></textarea>
-              <div className="flex justify-between items-center mt-3">
-                <div className="flex gap-2">
-                  <button
-                    className="p-2 rounded-lg hover:bg-med-gray dark:hover:bg-[#253636] text-med-text-secondary dark:text-gray-400 transition-colors"
-                    title="Add Image"
-                  >
-                    <span className="material-symbols-outlined text-[20px]">
-                      image
-                    </span>
-                  </button>
-                  <button
-                    className="p-2 rounded-lg hover:bg-med-gray dark:hover:bg-[#253636] text-med-text-secondary dark:text-gray-400 transition-colors"
-                    title="Add Location"
-                  >
-                    <span className="material-symbols-outlined text-[20px]">
-                      location_on
-                    </span>
-                  </button>
-                  <button className="flex items-center gap-1 px-2 rounded-lg hover:bg-med-gray dark:hover:bg-[#253636] text-med-text-secondary dark:text-gray-400 transition-colors text-xs font-medium">
-                    <span className="material-symbols-outlined text-[18px]">
-                      visibility_off
-                    </span>
-                    Post Anonymously
-                  </button>
-                </div>
-                <button className="px-6 py-2 bg-primary hover:bg-primary/90 text-med-dark font-semibold text-sm rounded-lg transition-colors">
-                  Post
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+         <CreatePostForm/>
 
         {/* --- Filters Section --- */}
         <div className="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-hide">

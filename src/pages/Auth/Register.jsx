@@ -267,7 +267,7 @@ const Register = ({ setLoginPage }) => {
               Already have an account?{" "}
               <a
                 className="font-semibold text-primary hover:text-primary-dark hover:underline transition-colors cursor-pointer"
-                onClick={() => setLoginPage(true)} // Assuming true means show login
+                onClick={() => setLoginPage(false)} // Assuming true means show login
               >
                 Log in
               </a>
