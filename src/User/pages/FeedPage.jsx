@@ -5,7 +5,9 @@ import DoctorModal from "../components/DoctorModal";
 import { useState } from "react";
 import { useSelector } from "react-redux";
 import CreatePostForm from "../components/CreatePostForm";
- 
+import { userPost } from "../../server/allApi";
+import { ToastContainer ,toast } from "react-toastify";
+import 'react-toastify/dist/ReactToastify.css';
 
 // --- MOCK DATA FOR FEED ---
 const POSTS_DATA = [
@@ -67,7 +69,7 @@ const POSTS_DATA = [
   },
   {
     id: 3,
-    userName: "sunina.",
+    userName: "sunina p",
     userImage:
       "https://lh3.googleusercontent.com/aida-public/AB6AXuBpLguAw3wbgL1x-w01MbrTIwagEcoEkGAP9uI66Z-n58v6VDfEFTpXYBckHoWNZwEiWUUN_eaPbcA14qa0FFRDrUn3T6hxXk7j12NgDvEQtzyHSHUwRnu0f55LkDtRCbyWaOy0Zgy8yF_7pGDWee9cjURqyiIHFVt1SBLuytJzgQeIZamdQvgE8m3re1fl-YVGOeBo1AF_-Uq6m34FYtNNxWGS-ITU3KdXpM2FFGrNTSgAfk0QCxKenM6l3MWgKRvbe9ubm_vRpDw",
     timeAgo: "5 hours ago",
@@ -107,14 +109,59 @@ const DOCTORS = [
 
 const FeedPage = () => {
   const [selectedDoctor, setSelectedDoctor] = useState(null);
+     
+
+  const handlePostSubmit = async (data) => {
+    try {
+      const formData = new FormData();
+
+      formData.append("title", data.title);
+      formData.append("description", data.description);
+      formData.append("stream", data.stream);
+      formData.append("isAnonymous", data.isAnonymous);
+      formData.append("includeLocation", data.includeLocation);
+      formData.append("timestamp", data.timestamp);
+      
+
+      data.tags.forEach((tag) => formData.append("tags[]", tag));
+      console.log(formData);
+
+      if (data.image) {
+        formData.append("image", data.image);
+      }
+      for (let [key,value] of formData.entries()){
+        console.log(key ,value)
+      }
+
+      const res = await userPost(formData);
+
+      if (res?.status === 201) {
+        console.log("Post created successfully:", res.data);
+            toast.success("Post created successfully 🩺");
+      }  
+    
+    } catch (error) {
+      if (error.response) {
+      console.log("Backend message:", error.response.data.message);
+ toast.error(error.response.data?.message || "Request failed");
+      // Example UI usage:
+      // setError(error.response.data.message)
+    } else {
+      console.error("Unexpected error:", error.message);
+         toast.error("Server not reachable. Try again later.");
+    }
+    }
+  };
+
   return (
     // MAIN LAYOUT CONTAINER
     <div className="flex justify-center items-start gap-6 w-full px-4 lg:px-8 py-6">
+     
       {/* LEFT COLUMN: MAIN FEED (Composer + Posts) */}
 
       <main className="flex flex-col w-full max-w-[720px] gap-6">
         {/* --- Composer Section --- */}
-         <CreatePostForm/>
+        <CreatePostForm onSubmit={handlePostSubmit} />
 
         {/* --- Filters Section --- */}
         <div className="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-hide">

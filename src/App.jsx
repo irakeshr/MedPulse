@@ -13,10 +13,11 @@ import DoctorLayout from './Doctor/pages/DoctorLayout';
 import HomePage from './pages/HomePage';
 import ProtectedRoute from './routes/ProtectedRoute';
 import DoctorRoute from './routes/DoctorRoute';
-
+ import 'react-toastify/dist/ReactToastify.css';
 const App = () => {
   return (
     <div >
+      
       <Routes>
 
       {/* PUBLIC ROUTE (Login + Register) */}
@@ -24,8 +25,10 @@ const App = () => {
 
       {/* PROTECTED USER ROUTES */}
       <Route element={<ProtectedRoute />}>
+      
 
         <Route element={<HomeLayout />}>
+        
           <Route path="/me" element={<FeedPage />} />
           <Route path="/posts" element={<MyPostsPage />} />
           <Route path="/saved" element={<SavedPage />} />

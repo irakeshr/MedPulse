@@ -5,7 +5,6 @@ export const CommonApi = async (httpMethod, url, reqBody) => {
   const token = localStorage.getItem("Token");
 
   const headers = {
-    "Content-Type": "application/json",
     Authorization: token ? `Bearer ${token}` : "one",
   };
 
@@ -21,6 +20,6 @@ export const CommonApi = async (httpMethod, url, reqBody) => {
       return res;
     })
     .catch((err) => {
-      console.log(err);
+       throw err
     });
 };

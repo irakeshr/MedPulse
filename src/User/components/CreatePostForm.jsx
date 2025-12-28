@@ -16,7 +16,7 @@ const MEDICAL_STREAMS = [
 const CreatePostForm = ({ onSubmit, userAvatar }) => {
   // --- States ---
   const [title, setTitle] = useState(''); // NEW: Title State
-  const [content, setContent] = useState('');
+  const [description, setDescription] = useState('');
   const [selectedStream, setSelectedStream] = useState(''); 
   const [tags, setTags] = useState([]); // Array for multiple tags
   
@@ -63,15 +63,15 @@ const CreatePostForm = ({ onSubmit, userAvatar }) => {
 
   const handleSubmit = async () => {
     // Validation: Require Title + Content
-    if (!content.trim() || !title.trim()) {
-      toast.error("Title and content cannot be empty.");
+    if (!description.trim() || !title.trim()) {
+      toast.error("Title and description cannot be empty.");
       return;
     }
 
     setIsSubmitting(true);
 
     const postData = {
-      title, content, stream: selectedStream, tags,
+      title, description, stream: selectedStream, tags,
       image: selectedImage,
       isAnonymous,
       includeLocation: addLocation,
@@ -83,16 +83,19 @@ const CreatePostForm = ({ onSubmit, userAvatar }) => {
     } else {
       console.log("Form Submitted:", postData);
     }
-
-    // Reset Form
-    setTitle('');
-    setContent('');
+    setTimeout(() => {
+         setTitle('');
+    setDescription('');
     setTags([]);
     setSelectedStream('');
     removeImage();
     setIsAnonymous(false);
     setAddLocation(false);
     setIsSubmitting(false);
+    },  1000);
+
+    // Reset Form
+   
   };
 
   return (
@@ -121,8 +124,8 @@ const CreatePostForm = ({ onSubmit, userAvatar }) => {
 
           {/* --- 2. BODY TEXTAREA --- */}
           <textarea
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
             className="w-full bg-med-gray dark:bg-[#253636] rounded-xl p-3 text-sm min-h-[80px] border-none focus:ring-1 focus:ring-primary/50 resize-none placeholder:text-med-text-secondary dark:placeholder:text-gray-500 text-med-dark dark:text-white transition-all"
             placeholder={isAnonymous ? "Describe your symptoms anonymously..." : "Describe your symptoms... What are you feeling?"}
           ></textarea>
@@ -176,7 +179,7 @@ const CreatePostForm = ({ onSubmit, userAvatar }) => {
                 onClick={removeImage}
                 className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-0.5 hover:bg-red-600 shadow-sm"
               >
-                <span className="material-symbols-outlined text-[16px] block">close</span>
+                <span className="material-symbols-outlined text-[12px] block">close</span>
               </button>
             </div>
           )}
@@ -200,9 +203,9 @@ const CreatePostForm = ({ onSubmit, userAvatar }) => {
 
             <button 
               onClick={handleSubmit}
-              disabled={!content.trim() || !title.trim() || isSubmitting}
+              disabled={!description.trim() || !title.trim() || isSubmitting}
               className={`px-6 py-2 font-semibold text-sm rounded-lg transition-all 
-                ${!content.trim() || !title.trim() || isSubmitting 
+                ${!description.trim() || !title.trim() || isSubmitting 
                   ? 'bg-gray-200 text-gray-400 dark:bg-gray-700 dark:text-gray-500 cursor-not-allowed' 
                   : 'bg-primary hover:bg-primary/90 text-med-dark shadow-md hover:shadow-lg'
                 }`}

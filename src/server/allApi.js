@@ -14,3 +14,7 @@ export const tokenValidation =async()=>{
   return await CommonApi("GET", `${SERVER_URL}/auth/validate-token`);
 
 }
+export const userPost =async(reqBody)=>{
+  return await CommonApi("POST", `${SERVER_URL}/user/user-post`,reqBody);
+
+}
