@@ -18,3 +18,7 @@ export const userPost =async(reqBody)=>{
   return await CommonApi("POST", `${SERVER_URL}/user/user-post`,reqBody);
 
 }
+export const updateProfile =async(reqBody)=>{
+  return await CommonApi("POST", `${SERVER_URL}/user/update-profile`,reqBody);
+
+}

@@ -1,51 +1,117 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
 import RecentActivityFeed from '../components/RecentActivityFeed';
 import EditProfileModal from '../components/EditProfileModal';
 import ProfileHeader from '../components/ProfileHeader';
 import ProfileStats from '../components/ProfileStats';
 import ProfileSidebar from '../components/ProfileSidebar';
+import { updateProfile } from '../../server/allApi';
+import { toast } from 'react-toastify';
+import CustomToast from '../../components/CustomToast';
 
 // --- MOCK DATA ---
-const USER_PROFILE = {
+const INITIAL_USER = {
   name: "Rakesh R.",
   handle: "@irakesh.r",
   level: "Level 4 Member",
-  image: "https://lh3.googleusercontent.com/aida-public/AB6AXuCOLCviMOpASErCHhTQmvY6k34iYjPPoNBtTcXTevn6qvSVudTEwgQtFPiNSM2fdDYS95FtRj0VMuJZ2MhrCv7Je5qakn_Yo9VwsJIEKLLds3-whsOamhqUK47VWjCFw35W61E_-AWBjonf9A9fdwikxOiALd27cPTkB7PAhHRgG7d4ltlHxF__DTRS_15qNAHrVAhOQk3p2mBzmH7Uum18DB5Z6Ck4VDoIjknvWcW0y9wVdlHYF1a23BsjBnqQBRNl__52tiym3xU",
+  image: "https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah",
   location: "KERALA, PKD",
   joined: "April 2026",
   website: "irakesh.r_here.com",
-  bio: "Health enthusiast focused on holistic wellness and migraine management. I believe in a balanced approach combining modern medicine and lifestyle changes. Always happy to share advice on natural remedies! 🌱",
+  bio: "Health enthusiast focused on holistic wellness and migraine management.",
   stats: { posts: 28, helpful: 142, comments: 56 },
-  tags: ["#Migraine", "#AllergyRelief", "#HealthySleep", "#Mindfulness", "#Nutrition"]
+  tags: ["#Migraine", "#AllergyRelief", "#HealthySleep"],
+  bloodGroup: "O+",
+  dateOfBirth: "",
+  allergies: ["Peanuts"],
+  chronicConditions: ["Migraine"]
 };
 
- 
-
 export default function ProfilePage() {
-  const [isModalOpen,setIsModalOpen] = useState(false)
-   //open this modal while click the edit profile button
-  const handleClickEditProfile=()=>{
-    setIsModalOpen(true)
+  const [user, setUser] = useState(INITIAL_USER);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-   }
-   const handleModalClose=()=>{
-    setIsModalOpen(false)
-   }
+  // Open Modal
+  const handleClickEditProfile = () => {
+    setIsModalOpen(true);
+  };
+
+  // Close Modal
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+  };
+
+  // Handle Update from Modal
+  const handleProfileUpdate = async (updatedData) => {
+    try {
+      const fd = new FormData();
+
+      fd.append("displayName", updatedData.displayName);
+      if (updatedData.profileImage) {
+        fd.append("profileImage", updatedData.profileImage); // 👈 FILE
+      }
+      fd.append("bloodGroup", updatedData.bloodGroup);
+      fd.append("dateOfBirth", updatedData.dateOfBirth);
+      fd.append("location", updatedData.location);
+      fd.append("website", updatedData.website);
+      fd.append("bio", updatedData.bio);
+      updatedData.healthTags.forEach(tag => fd.append("healthTags[]", tag));
+      updatedData.allergies.forEach(allergy => fd.append("allergies[]", allergy));
+      updatedData.chronicConditions.forEach(condition => fd.append("chronicConditions[]", condition));
+      const res = await updateProfile(fd); // Pass FormData
+      
+      if (res.status === 200) { // Assuming 200 for successful update
+        setUser(prev => ({
+          ...prev,
+          name: updatedData.displayName,
+          location: updatedData.location,
+          website: updatedData.website,
+          bio: updatedData.bio,
+          tags: updatedData.healthTags,
+          image: updatedData.profileImagePreview, // Use the preview URL for immediate feedback
+          bloodGroup: updatedData.bloodGroup,
+          allergies: updatedData.allergies,
+          chronicConditions: updatedData.chronicConditions
+        }));
+        toast(
+          <CustomToast
+            title="Profile Updated Successfully"
+            message="Your profile has been updated."
+            type="success"
+          />
+        );
+      }
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      toast(
+        <CustomToast
+          title="Profile Update Failed"
+          message={error.response?.data?.message || "An unexpected error occurred."}
+          type="error"
+        />
+      );
+    }
+  };
+
   return (
     // MAIN LAYOUT GRID
     <div className="flex justify-center items-start gap-6 w-full px-4 lg:px-8 py-6">
-      { isModalOpen ? <EditProfileModal onClose={handleModalClose}/>: null}
-   
-      {/* LEFT COLUMN: MAIN PROFILE CONTENT         */}
       
+      {isModalOpen && (
+        <EditProfileModal 
+          onClose={handleModalClose} 
+          user={user} 
+          onSubmit={handleProfileUpdate} 
+        />
+      )}
+
+      {/* LEFT COLUMN: MAIN PROFILE CONTENT */}
       <main className="flex flex-col w-full max-w-[720px] gap-6">
         
         {/* 1. Header Card */}
-        <ProfileHeader user={USER_PROFILE} onOpen={handleClickEditProfile} />
+        <ProfileHeader user={user} onOpen={handleClickEditProfile} />
 
         {/* 2. Stats Grid */}
-        <ProfileStats stats={USER_PROFILE.stats} />
+        <ProfileStats stats={user.stats} />
 
         {/* 3. Health Tags Card */}
         <div className="bg-white dark:bg-[#1a2c2c] rounded-2xl p-6 shadow-sm border border-[#e5e7eb] dark:border-[#2a3838]">
@@ -54,16 +120,22 @@ export default function ProfilePage() {
               <span className="material-symbols-outlined text-primary">sell</span>
               <h3 className="font-bold text-med-dark dark:text-white text-lg">My Health Tags</h3>
             </div>
-            <button className="text-xs font-semibold text-primary hover:bg-primary/10 px-2 py-1 rounded transition-colors uppercase tracking-wide">Edit Tags</button>
+            <button onClick={handleClickEditProfile} className="text-xs font-semibold text-primary hover:bg-primary/10 px-2 py-1 rounded transition-colors uppercase tracking-wide">
+              Edit Tags
+            </button>
           </div>
           <p className="text-sm text-med-text-secondary dark:text-gray-400 mb-4">Topics I'm following and experienced in.</p>
           <div className="flex flex-wrap gap-2">
-            {USER_PROFILE.tags.map((tag, idx) => (
-               <span key={idx} className="px-3 py-1.5 rounded-lg bg-med-gray dark:bg-[#253636] border border-[#e5e7eb] dark:border-[#2a3838] text-sm font-medium text-med-dark dark:text-gray-300">
-                 {tag}
-               </span>
-            ))}
-            <button className="px-3 py-1.5 rounded-lg border border-dashed border-med-text-secondary text-med-text-secondary hover:bg-med-gray/50 text-sm font-medium flex items-center gap-1 transition-colors">
+            {user.tags && user.tags.length > 0 ? (
+              user.tags.map((tag, idx) => (
+                <span key={idx} className="px-3 py-1.5 rounded-lg bg-med-gray dark:bg-[#253636] border border-[#e5e7eb] dark:border-[#2a3838] text-sm font-medium text-med-dark dark:text-gray-300">
+                  {tag}
+                </span>
+              ))
+            ) : (
+              <span className="text-sm text-gray-400 italic">No tags added yet.</span>
+            )}
+            <button onClick={handleClickEditProfile} className="px-3 py-1.5 rounded-lg border border-dashed border-med-text-secondary text-med-text-secondary hover:bg-med-gray/50 text-sm font-medium flex items-center gap-1 transition-colors">
               <span className="material-symbols-outlined text-[16px]">add</span> Add Tag
             </button>
           </div>
@@ -71,24 +143,16 @@ export default function ProfilePage() {
 
         {/* 4. Recent Activity Feed */}
         <div className="flex flex-col gap-4">
-         <RecentActivityFeed/>
+          <RecentActivityFeed />
         </div>
 
       </main>
 
-   
-  
+      {/* RIGHT COLUMN: SIDEBAR */}
       <div className="hidden xl:block w-80 shrink-0 sticky top-4">
          <ProfileSidebar />
       </div>
-      
-
 
     </div>
   );
 }
-
-// --- SUB-COMPONENTS ---
- 
-
-
