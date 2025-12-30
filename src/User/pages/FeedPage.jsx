@@ -8,6 +8,7 @@ import CreatePostForm from "../components/CreatePostForm";
 import { userPost } from "../../server/allApi";
 import { ToastContainer ,toast } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
+import CustomToast from "../../components/CustomToast";
 
 // --- MOCK DATA FOR FEED ---
 const POSTS_DATA = [
@@ -137,13 +138,39 @@ const FeedPage = () => {
 
       if (res?.status === 201) {
         console.log("Post created successfully:", res.data);
-            toast.success("Post created successfully 🩺");
+            toast(
+    <CustomToast 
+      title="Post Created Successfully"
+      message= "Your symptom post is now live in the feed" 
+      type="success"
+    />, 
+    {
+      // Optional: specific overrides for just this toast
+      position: "bottom-right",
+       
+      bodyClassName: "p-5 m-0",
+      closeButton: false // We are using our own close button inside the component
+    }
+  );
       }  
     
     } catch (error) {
       if (error.response) {
       console.log("Backend message:", error.response.data.message);
- toast.error(error.response.data?.message || "Request failed");
+ toast(
+    <CustomToast 
+      title={error.response.data.message} 
+      message="title,description,stream" 
+      type="error"
+    />, 
+    {
+      // Optional: specific overrides for just this toast
+      position: "bottom-right",
+       
+      bodyClassName: "p-5 m-0",
+      closeButton: false // We are using our own close button inside the component
+    }
+  );
       // Example UI usage:
       // setError(error.response.data.message)
     } else {

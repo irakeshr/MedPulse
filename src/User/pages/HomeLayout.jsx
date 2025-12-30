@@ -8,15 +8,22 @@ export default function AdminLayout() {
     // MAIN WRAPPER
     <div className=" flex flex-col h-screen w-full bg-[#F2F4F7] overflow-hidden text-gray-800  bg-white dark:bg-[#1a2c2c]">
 
-      <ToastContainer position="bottom-right" autoClose={3000}  
-      className="!z-[9999]" // Force it to be on top of everything
-        hideProgressBar={false}
-        newestOnTop={true}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover/>
+    <ToastContainer
+  position="bottom-right"
+  autoClose={3000}
+  hideProgressBar={true} // Hide default progress bar if you want clean look
+  newestOnTop={false}
+  closeOnClick={false} // Important: set false because we have a custom close button
+  rtl={false}
+  pauseOnFocusLoss
+  draggable
+  pauseOnHover
+  theme="light"
+  // These styles strip away the default white box so ONLY your component shows
+  toastClassName={() => "relative flex p-0 min-h-10 rounded-md justify-between overflow-hidden cursor-pointer"}
+  bodyClassName={() => "flex text-sm font-white font-med block"}
+  style={{ width: "auto", background: "none", boxShadow: "none" }} 
+/>
       
       {/* 1. HEADER */}
       <div className="w-full h-[72px] shrink-0 bg-white border-b border-gray-200 z-50">

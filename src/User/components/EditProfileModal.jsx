@@ -1,24 +1,68 @@
 const EditProfileModal = ({onClose}) => {
-  return (
+ return (
     <div
-      aria-modal="true" onClick={onClose}
+      aria-modal="true"
+      onClick={onClose}
       className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-med-dark/60 backdrop-blur-sm scrollbar-hide overflow-auto"
       role="dialog"
     >
-      <div className="bg-white dark:bg-[#1a2c2c] w-full max-w-2xl rounded-2xl shadow-2xl border border-[#e5e7eb] dark:border-[#2a3838] flex flex-col max-h-[90vh] scrollbar-hide overflow-auto" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="bg-white dark:bg-[#1a2c2c] w-full max-w-2xl rounded-2xl shadow-2xl border border-[#e5e7eb] dark:border-[#2a3838] flex flex-col max-h-[90vh] scrollbar-hide overflow-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-[#e5e7eb] dark:border-[#2a3838]">
           <h2 className="text-xl font-bold text-med-dark dark:text-white">
             Edit Profile
           </h2>
-          <button className="p-2 text-med-text-secondary dark:text-gray-400 hover:bg-med-gray dark:hover:bg-[#253636] rounded-full transition-colors" onClick={onClose}>
-            <span className="material-symbols-outlined" onClick={onClose}>close</span>
+          <button
+            className="p-2 text-med-text-secondary dark:text-gray-400 hover:bg-med-gray dark:hover:bg-[#253636] rounded-full transition-colors"
+            onClick={onClose}
+          >
+            <span className="material-symbols-outlined">close</span>
           </button>
         </div>
 
         {/* Scrollable Content */}
         <div className="p-6 overflow-y-auto scrollbar-hide">
           <form className="space-y-6">
+            
+            {/* --- NEW: Profile Photo Upload Section --- */}
+            <div className="flex flex-col items-center justify-center gap-4">
+              <div className="relative group">
+                <div className="w-28 h-28 rounded-full p-1 border-2 border-dashed border-[#e5e7eb] dark:border-[#2a3838] group-hover:border-primary transition-colors">
+                  <img
+                    src="https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah" 
+                    alt="Profile"
+                    className="w-full h-full rounded-full object-cover bg-gray-100 dark:bg-[#253636]"
+                  />
+                </div>
+                
+                {/* Edit Button Overlay */}
+                <label 
+                  htmlFor="photo-upload" 
+                  className="absolute bottom-1 right-1 p-2 bg-primary hover:bg-primary/90 text-med-dark rounded-full cursor-pointer shadow-lg transition-transform transform hover:scale-105 active:scale-95 border-2 border-white dark:border-[#1a2c2c]"
+                >
+                  <span className="material-symbols-outlined text-[18px] flex">photo_camera</span>
+                </label>
+                
+                {/* Hidden Input */}
+                <input 
+                  id="photo-upload" 
+                  type="file" 
+                  accept="image/*" 
+                  className="hidden" 
+                />
+              </div>
+              <div className="text-center">
+                <p className="text-sm font-medium text-med-dark dark:text-white">Profile Photo</p>
+                <p className="text-xs text-med-text-secondary dark:text-gray-500 mt-1">
+                  Allowed *.jpeg, *.jpg, *.png
+                </p>
+              </div>
+            </div>
+            {/* ----------------------------------------- */}
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Display Name */}
               <div className="space-y-2">
