@@ -6,28 +6,17 @@ import ProfileStats from '../components/ProfileStats';
 import ProfileSidebar from '../components/ProfileSidebar';
 import { updateProfile } from '../../server/allApi';
 import { toast } from 'react-toastify';
+import { useSelector,useDispatch } from 'react-redux';
 import CustomToast from '../../components/CustomToast';
 
 // --- MOCK DATA ---
-const INITIAL_USER = {
-  name: "Rakesh R.",
-  handle: "@irakesh.r",
-  level: "Level 4 Member",
-  image: "https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah",
-  location: "KERALA, PKD",
-  joined: "April 2026",
-  website: "irakesh.r_here.com",
-  bio: "Health enthusiast focused on holistic wellness and migraine management.",
-  stats: { posts: 28, helpful: 142, comments: 56 },
-  tags: ["#Migraine", "#AllergyRelief", "#HealthySleep"],
-  bloodGroup: "O+",
-  dateOfBirth: "",
-  allergies: ["Peanuts"],
-  chronicConditions: ["Migraine"]
-};
+ 
 
 export default function ProfilePage() {
-  const [user, setUser] = useState(INITIAL_USER);
+    const  {profile} =useSelector((state)=>state.userDetail);
+ const dispatch=useDispatch()
+
+  const [user, setUser] = useState(profile);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Open Modal

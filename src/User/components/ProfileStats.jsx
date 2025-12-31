@@ -5,7 +5,7 @@ const ProfileStats = ({ stats }) => (
         <span className="material-symbols-outlined">post_add</span>
       </div>
       <div>
-        <div className="text-2xl font-bold text-med-dark dark:text-white">{stats.posts}</div>
+        <div className="text-2xl font-bold text-med-dark dark:text-white">{stats?.posts}</div>
         <div className="text-xs text-med-text-secondary dark:text-gray-400 font-semibold uppercase tracking-wide">Total Posts</div>
       </div>
     </div>
@@ -14,7 +14,7 @@ const ProfileStats = ({ stats }) => (
         <span className="material-symbols-outlined">thumb_up</span>
       </div>
       <div>
-        <div className="text-2xl font-bold text-med-dark dark:text-white">{stats.helpful}</div>
+        <div className="text-2xl font-bold text-med-dark dark:text-white">{stats?.helpful}</div>
         <div className="text-xs text-med-text-secondary dark:text-gray-400 font-semibold uppercase tracking-wide">Helpful Votes</div>
       </div>
     </div>
@@ -23,7 +23,7 @@ const ProfileStats = ({ stats }) => (
         <span className="material-symbols-outlined">forum</span>
       </div>
       <div>
-        <div className="text-2xl font-bold text-med-dark dark:text-white">{stats.comments}</div>
+        <div className="text-2xl font-bold text-med-dark dark:text-white">{stats?.comments}</div>
         <div className="text-xs text-med-text-secondary dark:text-gray-400 font-semibold uppercase tracking-wide">Comments</div>
       </div>
     </div>

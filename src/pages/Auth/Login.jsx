@@ -30,7 +30,7 @@ const Login = ({ setRegisterPage }) => {
     try {
       const res = await userLogin(loginDetails);
       if (res.status === 200) {
-        localStorage.setItem("Token", res.data.token);
+        localStorage.setItem("token", res.data.token);
         toast.success("Login Success!!");
         dispatch(loginSuccess());
         if (res.data.role == "doctor") {

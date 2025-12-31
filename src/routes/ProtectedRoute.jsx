@@ -1,85 +1,83 @@
 import { useSelector, useDispatch } from "react-redux";
 import { Navigate, Outlet } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { tokenValidation } from "../server/allApi";
-import { setUser, logout } from "../redux/authSlice";
+import { tokenValidation, getUserProfile } from "../server/allApi";
+import { loginSuccess, logout } from "../redux/authSlice";
+import { setUser, clearUser } from "../redux/userSlice";
 import MedPulseSplash from "../pages/MedPulseSplash";
 
 const ProtectedRoute = () => {
   const dispatch = useDispatch();
-  const { isAuthenticated, user } = useSelector((state) => state.auth);
+  const { isAuthenticated } = useSelector((state) => state.auth);
+  const { profile: user } = useSelector((state) => state.userDetail);
 
-  // 1. Track if backend is checking
   const [isValidating, setIsValidating] = useState(true);
-  
-  // 2. Track if Splash UI should still be visible
   const [showSplash, setShowSplash] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem("Token");
+    const token = localStorage.getItem("token"); 
 
-    // Case: No token found
     if (!token) {
       dispatch(logout());
-      setIsValidating(false); // Validation done (failed)
+      dispatch(clearUser());
+      setIsValidating(false);
       return;
     }
 
-    // Case: Validate Token
-    const validateToken = async () => {
+    const validateAuth = async () => {
       try {
-        const res = await tokenValidation();
-        if (res?.data?.success) {
-          dispatch(setUser(res.data.user)); 
-        } else {
-          dispatch(logout());
+        //  Validate token
+        const tokenRes = await tokenValidation();
+
+        if (!tokenRes?.data?.success) {
+          throw new Error("Invalid token");
         }
-      } catch (error) {
-        console.error("Auth check failed:", error);
+
+        dispatch(loginSuccess());
+
+        //  Fetch user profile
+        const profileRes = await getUserProfile(tokenRes.data.user._id);
+        dispatch(setUser(profileRes.data));
+        console.log(profileRes.data)
+      } catch (err) {
+        console.error("Authentication failed:", err);
         dispatch(logout());
+        dispatch(clearUser());
       } finally {
-        // Validation logic is complete
         setIsValidating(false);
       }
     };
 
-    validateToken();
+    validateAuth();
   }, [dispatch]);
 
-   
-
-  // 1. Show Splash Screen if we are validating OR if animation hasn't finished
+  /* ---------------- SPLASH SCREEN ---------------- */
   if (showSplash) {
     return (
-      <MedPulseSplash 
-        // Tell splash to finish progress bar when validation is done
-        finishLoading={!isValidating} 
-        // When progress bar hits 100%, hide the splash
-        onAnimationComplete={() => setShowSplash(false)} 
+      <MedPulseSplash
+        finishLoading={!isValidating}
+        onAnimationComplete={() => setShowSplash(false)}
       />
     );
   }
 
-  // 2. Security Check (Post-Splash)
+  /* ---------------- AUTH CHECK ---------------- */
   if (!isAuthenticated) {
     return <Navigate to="/" replace />;
   }
 
-  // 3. Role Based Routing
-  if (user?.role === "doctor") {
-    return <Navigate to="/doctor/dashboard" replace />;
+  /* ---------------- ROLE ROUTING ---------------- */
+  console.log(user)
+  switch (user?.role) {
+    case "doctor":
+      return <Navigate to="/doctor/dashboard" replace />;
+    case "admin":
+      return <Navigate to="/admin" replace />;
+    case "patient":
+      return <Outlet />;
+    default:
+      return <Navigate to="/" replace />;
   }
-  
-  if (user?.role === "admin") {
-    return <Navigate to="/admin" replace />;
-  }
-
-  if (user?.role === "patient") {
-    return <Outlet />;
-  }
-
-  // 4. Fallback
-  return <Navigate to="/" replace />;
 };
 
 export default ProtectedRoute;

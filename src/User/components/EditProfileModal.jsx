@@ -1,20 +1,40 @@
 import React, { useState, useEffect } from 'react';
 
 const EditProfileModal = ({ onClose, user, onSubmit }) => {
+
   // Initialize state with user data or defaults
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+   const { allergies,
+  bio,
+  bloodGroup,
+  chronicConditions,
+  createdAt,
+  dateOfBirth,
+  displayName,
+  healthTags,
+  helpfulVotes,
+  joinedCommunities,
+  level,
+  location,
+  profileImage,
+  updatedAt,
+  username}=user.patientProfile
+
+  
+  const existingImage = profileImage;
+
   const [formData, setFormData] = useState({
-    displayName: user?.name || "",
-    profileImage: null,
-    profileImagePreview: user?.image || "https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah",
-    healthTags: user?.tags || [],
-    bloodGroup: user?.bloodGroup || "",
-    dateOfBirth: user?.dateOfBirth || "",
-    location: user?.location || "",
-    website: user?.website || "",
-    bio: user?.bio || "",
-    allergies: user?.allergies || [],
-    chronicConditions: user?.chronicConditions || []
+    displayName: displayName || "",
+    profileImage:null,
+    profileImagePreview: profileImage || "https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah",
+    healthTags: healthTags || [],
+  bloodGroup: bloodGroup || "",
+  dateOfBirth: dateOfBirth.split("T")[0] || "",
+  location: location || "",
+  bio: bio || "",
+  allergies: allergies || [],
+  chronicConditions: chronicConditions || []
   });
 
   // Handle Text Inputs
@@ -166,19 +186,7 @@ const EditProfileModal = ({ onClose, user, onSubmit }) => {
             </div>
 
             {/* Website */}
-            <div className="space-y-2">
-              <label className="text-sm font-semibold text-med-dark dark:text-gray-300">Website</label>
-              <div className="relative">
-                <span className="material-symbols-outlined absolute left-3 top-2.5 text-med-text-secondary text-[20px]">link</span>
-                <input
-                  name="website"
-                  value={formData.website}
-                  onChange={handleFormChanges}
-                  className="w-full rounded-xl border-[#e5e7eb] dark:border-[#2a3838] bg-white dark:bg-[#1a2c2c] text-med-dark dark:text-white pl-10 pr-4 py-2.5 focus:ring-2 focus:ring-primary/50 outline-none"
-                  placeholder="https://example.com"
-                />
-              </div>
-            </div>
+            
 
             {/* Bio */}
             <div className="space-y-2">
