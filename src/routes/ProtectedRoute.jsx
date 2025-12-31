@@ -3,7 +3,7 @@ import { Navigate, Outlet } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { tokenValidation, getUserProfile } from "../server/allApi";
 import { loginSuccess, logout } from "../redux/authSlice";
-import { setUser, clearUser } from "../redux/userSlice";
+import { setUser, clearUser, setStats } from "../redux/userSlice";
 import MedPulseSplash from "../pages/MedPulseSplash";
 
 const ProtectedRoute = () => {
@@ -28,15 +28,17 @@ const ProtectedRoute = () => {
       try {
         //  Validate token
         const tokenRes = await tokenValidation();
+        c 
 
         if (!tokenRes?.data?.success) {
           throw new Error("Invalid token");
         }
 
         dispatch(loginSuccess());
+        dispatch(setStats(tokenRes.data.user))
 
         //  Fetch user profile
-        const profileRes = await getUserProfile(tokenRes.data.user._id);
+        const profileRes = await getUserProfile();
         dispatch(setUser(profileRes.data));
         console.log(profileRes.data)
       } catch (err) {

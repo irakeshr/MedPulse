@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from "framer-motion";
 
 const EditProfileModal = ({ onClose, user, onSubmit }) => {
 
@@ -19,7 +20,7 @@ const EditProfileModal = ({ onClose, user, onSubmit }) => {
   location,
   profileImage,
   updatedAt,
-  username}=user.patientProfile
+  username}=user.patientProfile.patientProfile
 
   
   const existingImage = profileImage;
@@ -83,16 +84,36 @@ const EditProfileModal = ({ onClose, user, onSubmit }) => {
   };
 
   return (
-    <div
-      aria-modal="true"
-      onClick={onClose}
-      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-med-dark/60 backdrop-blur-sm scrollbar-hide overflow-auto"
-      role="dialog"
-    >
-      <div
-        className="bg-white dark:bg-[#1a2c2c] w-full max-w-2xl rounded-2xl shadow-2xl border border-[#e5e7eb] dark:border-[#2a3838] flex flex-col max-h-[90vh] scrollbar-hide overflow-auto"
-        onClick={(e) => e.stopPropagation()}
-      >
+   <AnimatePresence>
+       
+        <motion.div
+          // 1. Initial State (Before it appears)
+          initial={{ opacity: 0 }} 
+          // 2. Animate State (When visible)
+          animate={{ opacity: 1 }} 
+          // 3. Exit State (When onClose is called, before unmounting)
+          exit={{ opacity: 0 }} 
+          // 4. Smooth transition settings
+          transition={{ duration: 0.3, ease: "easeInOut" }}
+          
+          // Your existing props
+          aria-modal="true"
+          onClick={onClose}
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-med-dark/60 backdrop-blur-sm scrollbar-hide overflow-auto"
+          role="dialog"
+        >
+          {/* OPTIONAL: If you want the modal content to pop up slightly while the background fades in */}
+          <motion.div
+             initial={{ scale: 0.50, opacity: 0 }}
+             animate={{ scale: 1, opacity: 1 }}
+             exit={{ scale: 0.50, opacity: 0 }}
+             onClick={(e) => e.stopPropagation()} 
+                     className="bg-white dark:bg-[#1a2c2c] w-full max-w-2xl rounded-2xl shadow-2xl border border-[#e5e7eb] dark:border-[#2a3838] flex flex-col max-h-[90vh] scrollbar-hide overflow-auto"
+// Prevent closing when clicking content
+          >
+            
+
+  
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-[#e5e7eb] dark:border-[#2a3838]">
           <h2 className="text-xl font-bold text-med-dark dark:text-white">Edit Profile</h2>
@@ -255,8 +276,14 @@ const EditProfileModal = ({ onClose, user, onSubmit }) => {
               {isSubmitting ? 'Saving...' : 'SaveChanges'}
             </button>
         </div>
-      </div>
-    </div>
+       
+
+
+
+          </motion.div>
+        </motion.div>
+     
+    </AnimatePresence>
   );
 };
 

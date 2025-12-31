@@ -4,7 +4,8 @@ const initialState = {
   profile: null,
   loading: false,
   error: null,
-  lastFetched: null, // ⭐ silent refresh
+  lastFetched: null,
+  stats:null, // ⭐ silent refresh
 };
 
 const userSlice = createSlice({
@@ -17,8 +18,9 @@ const userSlice = createSlice({
       state.loading = false;
       state.error = null;
     },
-    userLoading: (state) => {
-      state.loading = true;
+    setStats: (state,action) => {
+        state.stats=action.payload;
+     
     },
     userError: (state, action) => {
       state.loading = false;
@@ -31,6 +33,6 @@ const userSlice = createSlice({
   },
 });
 
-export const { setUser, userLoading, userError, clearUser } =
+export const { setUser,setStats, userError, clearUser } =
   userSlice.actions;
 export default userSlice.reducer;

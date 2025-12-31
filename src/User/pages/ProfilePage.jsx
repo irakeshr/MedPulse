@@ -13,11 +13,13 @@ import CustomToast from '../../components/CustomToast';
  
 
 export default function ProfilePage() {
-    const  {profile} =useSelector((state)=>state.userDetail);
+    const  {profile,stats} =useSelector((state)=>state.userDetail);
+    
  const dispatch=useDispatch()
 
-  const [user, setUser] = useState(profile);
+  const [user, setUser] = useState({ patientProfile: profile, stats: stats });
   const [isModalOpen, setIsModalOpen] = useState(false);
+ 
 
   // Open Modal
   const handleClickEditProfile = () => {
@@ -48,18 +50,21 @@ export default function ProfilePage() {
       updatedData.chronicConditions.forEach(condition => fd.append("chronicConditions[]", condition));
       const res = await updateProfile(fd); // Pass FormData
       
-      if (res.status === 200) { // Assuming 200 for successful update
+      if (res.status === 200) { //  200 for successful update
         setUser(prev => ({
-          ...prev,
-          name: updatedData.displayName,
-          location: updatedData.location,
-          website: updatedData.website,
-          bio: updatedData.bio,
-          tags: updatedData.healthTags,
-          image: updatedData.profileImagePreview, // Use the preview URL for immediate feedback
-          bloodGroup: updatedData.bloodGroup,
-          allergies: updatedData.allergies,
-          chronicConditions: updatedData.chronicConditions
+ ...prev,
+ patientProfile: {
+ ...prev.patientProfile,
+ displayName: updatedData.displayName,
+ location: updatedData.location,
+ website: updatedData.website,
+ bio: updatedData.bio,
+ healthTags: updatedData.healthTags,
+ profileImage: updatedData.profileImagePreview, // Use the preview URL for immediate feedback
+ bloodGroup: updatedData.bloodGroup,
+ allergies: updatedData.allergies,
+ chronicConditions: updatedData.chronicConditions,
+ },
         }));
         toast(
           <CustomToast
@@ -100,7 +105,7 @@ export default function ProfilePage() {
         <ProfileHeader user={user} onOpen={handleClickEditProfile} />
 
         {/* 2. Stats Grid */}
-        <ProfileStats stats={user.stats} />
+        <ProfileStats stats={user.stats.stats} />
 
         {/* 3. Health Tags Card */}
         <div className="bg-white dark:bg-[#1a2c2c] rounded-2xl p-6 shadow-sm border border-[#e5e7eb] dark:border-[#2a3838]">
@@ -115,8 +120,8 @@ export default function ProfilePage() {
           </div>
           <p className="text-sm text-med-text-secondary dark:text-gray-400 mb-4">Topics I'm following and experienced in.</p>
           <div className="flex flex-wrap gap-2">
-            {user.tags && user.tags.length > 0 ? (
-              user.tags.map((tag, idx) => (
+            {user.patientProfile.healthTags && user.patientProfile.healthTags.length > 0 ? (
+              user.patientProfile.healthTags.map((tag, idx) => (
                 <span key={idx} className="px-3 py-1.5 rounded-lg bg-med-gray dark:bg-[#253636] border border-[#e5e7eb] dark:border-[#2a3838] text-sm font-medium text-med-dark dark:text-gray-300">
                   {tag}
                 </span>

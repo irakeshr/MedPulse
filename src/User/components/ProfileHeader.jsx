@@ -18,13 +18,14 @@ const ProfileHeader = ({ user,onOpen }) =>{
   location,
   profileImage,
   updatedAt,
-  username}=user.patientProfile
+  username}=user.patientProfile.patientProfile
+  console.log("from header=>>>",user.patientProfile)
 
   return (
   <div className="bg-white dark:bg-[#1a2c2c] rounded-2xl shadow-sm border border-[#e5e7eb] dark:border-[#2a3838] overflow-hidden">
     {/* Cover Image */}
     <div className="h-32 bg-gradient-to-r from-teal-400 to-[#13ecec] w-full relative">
-      <button className="absolute top-4 right-4 bg-black/20 hover:bg-black/30 text-white p-1.5 rounded-full backdrop-blur-sm transition-colors">
+      <button className="absolute top-4 right-4 bg-black/20 hover:bg-black/30 text-white p-1.5 rounded-full backdrop-blur-sm transition-colors" onClick={onOpen}>
         <span className="material-symbols-outlined text-[18px]">photo_camera</span>
       </button>
     </div>
@@ -34,7 +35,7 @@ const ProfileHeader = ({ user,onOpen }) =>{
       <div className="flex justify-between items-end -mt-12 mb-4">
         <div className="relative">
           <div className="size-28 rounded-full border-[4px] border-white dark:border-[#1a2c2c] bg-cover bg-center shadow-md" style={{ backgroundImage: `url('${profileImage}')` }}></div>
-          <div className="absolute bottom-1 right-1 bg-white dark:bg-[#1a2c2c] rounded-full p-1 border border-gray-100 dark:border-gray-700 shadow-sm cursor-pointer hover:bg-gray-50">
+          <div className="absolute bottom-1 right-1 bg-white dark:bg-[#1a2c2c] rounded-full p-1 border border-gray-100 dark:border-gray-700 shadow-sm cursor-pointer hover:bg-gray-50" onClick={onOpen}>
             <span className="material-symbols-outlined text-med-text-secondary text-[16px]">edit</span>
           </div>
         </div>
