@@ -22,6 +22,10 @@ const userSlice = createSlice({
         state.stats=action.payload;
      
     },
+   updateUserProfile: (state, action) => {
+  state.profile.patientProfile = action.payload;
+   
+},
     userError: (state, action) => {
       state.loading = false;
       state.error = action.payload;
@@ -33,6 +37,6 @@ const userSlice = createSlice({
   },
 });
 
-export const { setUser,setStats, userError, clearUser } =
+export const { setUser,setStats,updateUserProfile, userError, clearUser } =
   userSlice.actions;
 export default userSlice.reducer;

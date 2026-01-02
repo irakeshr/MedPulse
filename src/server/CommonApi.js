@@ -2,7 +2,7 @@ import axios from "axios";
  
 
 export const CommonApi = async (httpMethod, url, reqBody) => {
-  const token = localStorage.getItem("Token");
+  const token = localStorage.getItem("token");
 
   const headers = {
     Authorization: token ? `Bearer ${token}` : "one",

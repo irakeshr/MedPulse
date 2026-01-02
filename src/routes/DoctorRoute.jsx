@@ -14,7 +14,7 @@ const DoctorRoute = () => {
       const [showSplash, setShowSplash] = useState(true);
 
     useEffect(() => {
-        const token = localStorage.getItem("Token");
+        const token = localStorage.getItem("token");
 
         if (!token) {
             dispatch(logout());

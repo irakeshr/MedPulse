@@ -8,19 +8,25 @@ import { updateProfile } from '../../server/allApi';
 import { toast } from 'react-toastify';
 import { useSelector,useDispatch } from 'react-redux';
 import CustomToast from '../../components/CustomToast';
+import {  updateUserProfile } from '../../redux/userSlice';
+ 
 
 // --- MOCK DATA ---
  
 
 export default function ProfilePage() {
-    const  {profile,stats} =useSelector((state)=>state.userDetail);
-    
- const dispatch=useDispatch()
+    const { profile, stats } = useSelector((state) => state.userDetail);
+  
 
-  const [user, setUser] = useState({ patientProfile: profile, stats: stats });
+const user = {
+  patientProfile: profile,
+  stats,
+};
+const {username,createdAt} =user.patientProfile.patientProfile;
+console.log(user)
   const [isModalOpen, setIsModalOpen] = useState(false);
  
-
+const dispatch=useDispatch()
   // Open Modal
   const handleClickEditProfile = () => {
     setIsModalOpen(true);
@@ -30,6 +36,7 @@ export default function ProfilePage() {
   const handleModalClose = () => {
     setIsModalOpen(false);
   };
+ 
 
   // Handle Update from Modal
   const handleProfileUpdate = async (updatedData) => {
@@ -51,21 +58,22 @@ export default function ProfilePage() {
       const res = await updateProfile(fd); // Pass FormData
       
       if (res.status === 200) { //  200 for successful update
-        setUser(prev => ({
- ...prev,
- patientProfile: {
- ...prev.patientProfile,
- displayName: updatedData.displayName,
- location: updatedData.location,
- website: updatedData.website,
- bio: updatedData.bio,
- healthTags: updatedData.healthTags,
- profileImage: updatedData.profileImagePreview, // Use the preview URL for immediate feedback
- bloodGroup: updatedData.bloodGroup,
- allergies: updatedData.allergies,
- chronicConditions: updatedData.chronicConditions,
- },
-        }));
+   dispatch(updateUserProfile({
+    ...profile,
+    displayName: updatedData.displayName,
+    location: updatedData.location,
+    website: updatedData.website,
+    bio: updatedData.bio,
+    healthTags: updatedData.healthTags,
+    profileImage: updatedData.profileImagePreview,
+    bloodGroup: updatedData.bloodGroup,
+    allergies: updatedData.allergies,
+    username:username,
+    createdAt:createdAt,
+    chronicConditions: updatedData.chronicConditions,
+    dateOfBirth: updatedData.dateOfBirth,
+  }));
+  
         toast(
           <CustomToast
             title="Profile Updated Successfully"
@@ -120,8 +128,8 @@ export default function ProfilePage() {
           </div>
           <p className="text-sm text-med-text-secondary dark:text-gray-400 mb-4">Topics I'm following and experienced in.</p>
           <div className="flex flex-wrap gap-2">
-            {user.patientProfile.healthTags && user.patientProfile.healthTags.length > 0 ? (
-              user.patientProfile.healthTags.map((tag, idx) => (
+            {user.patientProfile.patientProfile.healthTags && user.patientProfile.patientProfile.healthTags.length > 0 ? (
+              user.patientProfile.patientProfile.healthTags.map((tag, idx) => (
                 <span key={idx} className="px-3 py-1.5 rounded-lg bg-med-gray dark:bg-[#253636] border border-[#e5e7eb] dark:border-[#2a3838] text-sm font-medium text-med-dark dark:text-gray-300">
                   {tag}
                 </span>

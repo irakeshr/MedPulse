@@ -1,25 +1,25 @@
 import { useSelector } from "react-redux";
 
+const ProfileHeader = ({ isUpdate,user, onOpen }) => {
 
-const ProfileHeader = ({ user,onOpen }) =>{
+const patientProfile = useSelector(
+  (state) => state.userDetail.profile?.patientProfile
+);
+  
 
-   
-  const { allergies,
+if (!patientProfile) return null;
+
+const {
   bio,
-  bloodGroup,
-  chronicConditions,
   createdAt,
-  dateOfBirth,
   displayName,
-  healthTags,
-  helpfulVotes,
-  joinedCommunities,
   level,
   location,
   profileImage,
-  updatedAt,
-  username}=user.patientProfile.patientProfile
-  console.log("from header=>>>",user.patientProfile)
+  username
+} = patientProfile;
+
+console.log(patientProfile)
 
   return (
   <div className="bg-white dark:bg-[#1a2c2c] rounded-2xl shadow-sm border border-[#e5e7eb] dark:border-[#2a3838] overflow-hidden">
@@ -65,7 +65,7 @@ const ProfileHeader = ({ user,onOpen }) =>{
           </div>
           <div className="flex items-center gap-1">
             <span className="material-symbols-outlined text-[18px]">calendar_month</span>
-            <span>Joined {new Date(createdAt).toLocaleDateString('en-US', {
+            <span>Joined {new Date(createdAt?.split("T")[0]).toLocaleDateString('en-US', {
   year: 'numeric',
   month: 'long'
 })}</span>
@@ -74,7 +74,7 @@ const ProfileHeader = ({ user,onOpen }) =>{
         </div>
         
         <p className="mt-4 text-sm leading-relaxed text-med-dark dark:text-gray-300 max-w-2xl">
-          {user.bio}
+          {bio}
         </p>
       </div>
     </div>

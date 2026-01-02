@@ -31,7 +31,7 @@ const EditProfileModal = ({ onClose, user, onSubmit }) => {
     profileImagePreview: profileImage || "https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah",
     healthTags: healthTags || [],
   bloodGroup: bloodGroup || "",
-  dateOfBirth: dateOfBirth.split("T")[0] || "",
+  dateOfBirth: dateOfBirth?.split("T")[0] || "",
   location: location || "",
   bio: bio || "",
   allergies: allergies || [],

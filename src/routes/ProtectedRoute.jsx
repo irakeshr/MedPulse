@@ -28,7 +28,7 @@ const ProtectedRoute = () => {
       try {
         //  Validate token
         const tokenRes = await tokenValidation();
-        c 
+        
 
         if (!tokenRes?.data?.success) {
           throw new Error("Invalid token");

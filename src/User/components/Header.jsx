@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from "react";
+import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 
 export default function Header() {
+  const {profile}=useSelector((state)=>state.userDetail)
+  const profileImage=profile.patientProfile.profileImage;
+ 
   // --- STATE ---
   // Mock Auth State (Replace with your auth context later)
   const [isLoggedIn, setIsLoggedIn] = useState(true); 
@@ -96,7 +100,7 @@ export default function Header() {
             // User Menu (If Logged In)
             <div
               className="bg-center bg-no-repeat bg-cover rounded-full size-9 border-2 border-white dark:border-[#1a2c2c] ring-2 ring-primary/20 cursor-pointer ml-1"
-              style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuCOLCviMOpASErCHhTQmvY6k34iYjPPoNBtTcXTevn6qvSVudTEwgQtFPiNSM2fdDYS95FtRj0VMuJZ2MhrCv7Je5qakn_Yo9VwsJIEKLLds3-whsOamhqUK47VWjCFw35W61E_-AWBjonf9A9fdwikxOiALd27cPTkB7PAhHRgG7d4ltlHxF__DTRS_15qNAHrVAhOQk3p2mBzmH7Uum18DB5Z6Ck4VDoIjknvWcW0y9wVdlHYF1a23BsjBnqQBRNl__52tiym3xU")' }}
+              style={{ backgroundImage: `url("${profileImage}")` }}
               onClick={() => setIsLoggedIn(false)} // Temp: Click to Logout
               title="Click to Logout (Test)"
             ></div>
