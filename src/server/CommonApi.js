@@ -14,7 +14,7 @@ export const CommonApi = async (httpMethod, url, reqBody) => {
     data: reqBody,
     headers,
   };
-  console.log(configReq)
+ 
   return await axios(configReq)
     .then((res) => {
       return res;

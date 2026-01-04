@@ -3,98 +3,19 @@ import { Link } from "react-router-dom";
 import PostCard from "../components/PostCard"; // Adjust path as needed
 import DoctorModal from "../components/DoctorModal";
 import { useState } from "react";
-import { useSelector } from "react-redux";
+import { useSelector,useDispatch } from "react-redux";
 import CreatePostForm from "../components/CreatePostForm";
+import { getPost } from "../../server/allApi";
 import { userPost } from "../../server/allApi";
 import { ToastContainer ,toast } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
 import CustomToast from "../../components/CustomToast";
+import { setPosts } from "../../redux/postSlice";
+ 
+
 
 // --- MOCK DATA FOR FEED ---
-const POSTS_DATA = [
-  {
-    id: 1,
-    userName: "Sarah J.",
-    userImage:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuA-_2UAAMg1UV2tqMyib86h_ZrmLXiDC6WkPLsmouH83WqtQYg8cUzhxadVz39pPEIUWoNlH-6qr_bn7rnnglyqL6gd0dLAvww3oEdDInQYW8LEVYNfb5c-_5rWL5XB62KTEnNugLfmYR5oA-JBMEPXsmETagNQwEXsbFqIoPsSaOUFQUxO-JsIpcbAzG47GLsWt-IrSQlXhZ7Ddda1z9SDAIRHvbF7cPXrCHQ4tPT0pgXtuoQjz01jiP_2jcj323LZDQvrusZ7Abg",
-    timeAgo: "2 hours ago",
-    location: "KERALA, kkd",
-    title: "Recurring migraines in the morning",
-    content:
-      "I've been waking up with a sharp pain on the left side of my head for the past few days. It usually fades by noon but comes back if I look at screens for too long. Has anyone else experienced this specific timing?",
-    severity: "Medium",
-    duration: "5 days",
-    tags: ["#Migraine", "#LightSensitivity"],
-    helpfulCount: 24,
-    commentCount: 2,
-    isAnonymous: false,
-    comments: [
-      {
-        id: 101,
-        user: "Alex M.",
-        avatar: "https://i.pravatar.cc/150?u=1",
-        text: "Have you checked your pillow height? That was my issue.",
-        timeAgo: "1h ago",
-      },
-      {
-        id: 102,
-        user: "Dr. A. Patel",
-        avatar:
-          "https://lh3.googleusercontent.com/aida-public/AB6AXuBWka30KoK367JQLZVMGdVbRloQfwH54LWzQpR8XuUISpovvc4TGsUdWkqMNdlPcyXzkSRDksS1QZnoqTwchBrE3N4k4x4JWlsBEW9ALwqmVe1RzD7PuHa-0nFDQNLjONwtnit_rvvo8vd8xYPDX2jJfm7UpXkHdLjjwZi0Zqqyt5nDCq76QETXKZ61uD-5WlZZAEzemKC4YwrYlf9CjpjxskyMfmhJ8W1I4bApEl04XkOXpFYIHWxz15F8__4KBdlm8msNwiWdvZc",
-        text: "Please monitor your water intake as well.",
-        timeAgo: "45m ago",
-      },
-    ],
-    doctorResponse: {
-      name: "Dr.Dhanas",
-      image:
-        "https://lh3.googleusercontent.com/aida-public/AB6AXuAC_a9H2-3A4RMV8-Nvm03Vor3Mtqezjgw1yRZuZ88hNsrjxWkHnMaQw0TRuJ9Qgf3dxFG90nMFZ5Ep6PLMHEObNEbripg-r2vOWL3qqsNy58MA1FzBYfjaqn8cV9zHAl0bJy5LS1cH29CX-61nru4uTve2Dc3RG6zGx59dse1gPz_poHACgiJsUe5GQkfUEcQiMyfxlv62Q1TezG3dpNJS31vLnShUNGx-ccIzGAOzbHuSeMYL1ul7UYc1e7_8HALsRSgH9k3t5Gw",
-      text: "Morning headaches can sometimes be related to sleep posture or even teeth grinding (bruxism). Since you mentioned screen sensitivity, eye strain could be a factor. I'd recommend tracking your sleep quality.",
-    },
-  },
-  {
-    id: 2,
-    userName: "Anonymous User",
-    timeAgo: "30 mins ago",
-    location: "KOCHI, KK",
-    title: "Sharp pain in lower back after lifting",
-    content:
-      "I helped a friend move yesterday and now I can barely stand up straight. It's a sharp shooting pain right above my hips. Heat makes it feel slightly better.",
-    severity: "High",
-    duration: "1 day",
-    tags: ["#BackPain"],
-    helpfulCount: 5,
-    commentCount: 0,
-    comments: [],
-    isAnonymous: true,
-  },
-  {
-    id: 3,
-    userName: "sunina p",
-    userImage:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuBpLguAw3wbgL1x-w01MbrTIwagEcoEkGAP9uI66Z-n58v6VDfEFTpXYBckHoWNZwEiWUUN_eaPbcA14qa0FFRDrUn3T6hxXk7j12NgDvEQtzyHSHUwRnu0f55LkDtRCbyWaOy0Zgy8yF_7pGDWee9cjURqyiIHFVt1SBLuytJzgQeIZamdQvgE8m3re1fl-YVGOeBo1AF_-Uq6m34FYtNNxWGS-ITU3KdXpM2FFGrNTSgAfk0QCxKenM6l3MWgKRvbe9ubm_vRpDw",
-    timeAgo: "5 hours ago",
-    location: "INDIA, SA",
-    title: "Mild fever and scratchy throat",
-    content:
-      "Started feeling off yesterday evening. Temperature is around 99.5F. Just looking for some home remedy suggestions to nip this in the bud before the weekend.",
-    severity: "Low",
-    duration: "2 days",
-    tags: ["#Cold", "#HomeRemedy"],
-    helpfulCount: 12,
-    commentCount: 1,
-    comments: [
-      {
-        id: 103,
-        user: "Lisa K.",
-        avatar: "https://i.pravatar.cc/150?u=2",
-        text: "Honey and ginger tea always works wonders for me!",
-        timeAgo: "3h ago",
-      },
-    ],
-    isAnonymous: false,
-  },
-];
+ 
 
 const DOCTORS = [
   {
@@ -109,35 +30,42 @@ const DOCTORS = [
 ];
 
 const FeedPage = () => {
+const dispatch =useDispatch();
   const [selectedDoctor, setSelectedDoctor] = useState(null);
+  const post = useSelector((state)=>state.post.posts)
+  const { profile, stats } = useSelector((state) => state.userDetail)
+  const [posted,setPosted]=useState(true);
+ 
+  
      
-
+   
   const handlePostSubmit = async (data) => {
+ // isAnonymous in false there but it return success with true from db why
     try {
       const formData = new FormData();
 
       formData.append("title", data.title);
       formData.append("description", data.description);
       formData.append("stream", data.stream);
-      formData.append("isAnonymous", data.isAnonymous);
+      formData.append("isAnonymous",String(data.isAnonymous));
       formData.append("includeLocation", data.includeLocation);
       formData.append("timestamp", data.timestamp);
       
 
       data.tags.forEach((tag) => formData.append("tags[]", tag));
-      console.log(formData);
+      
 
       if (data.image) {
         formData.append("image", data.image);
       }
-      for (let [key,value] of formData.entries()){
-        console.log(key ,value)
-      }
+     
 
       const res = await userPost(formData);
 
       if (res?.status === 201) {
-        console.log("Post created successfully:", res.data);
+        
+        setPosted(!posted);
+        
             toast(
     <CustomToast 
       title="Post Created Successfully"
@@ -156,7 +84,8 @@ const FeedPage = () => {
     
     } catch (error) {
       if (error.response) {
-      console.log("Backend message:", error.response.data.message);
+     
+     
  toast(
     <CustomToast 
       title={error.response.data.message} 
@@ -174,11 +103,24 @@ const FeedPage = () => {
       // Example UI usage:
       // setError(error.response.data.message)
     } else {
-      console.error("Unexpected error:", error.message);
+      
          toast.error("Server not reachable. Try again later.");
     }
     }
   };
+useEffect(() => {
+  const fetchPosts = async () => {
+    try {
+      const res = await getPost();
+      dispatch(setPosts(res)); 
+    } catch (error) {
+      
+      toast.error("Server not reachable. Try again later.");
+    }
+  };
+
+  fetchPosts();
+}, [posted, dispatch]);
 
   return (
     // MAIN LAYOUT CONTAINER
@@ -188,7 +130,7 @@ const FeedPage = () => {
 
       <main className="flex flex-col w-full max-w-[720px] gap-6">
         {/* --- Composer Section --- */}
-        <CreatePostForm onSubmit={handlePostSubmit} />
+        <CreatePostForm onSubmit={handlePostSubmit}  />
 
         {/* --- Filters Section --- */}
         <div className="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-hide">
@@ -217,8 +159,8 @@ const FeedPage = () => {
 
         {/* --- Feed Posts List --- */}
         <div className="flex flex-col gap-6">
-          {POSTS_DATA.map((post) => (
-            <PostCard key={post.id} post={post} />
+          {post.map((post) => (
+            <PostCard key={post.id} post={post} isOwnPost={stats._id===post.author._id} />
           ))}
         </div>
 

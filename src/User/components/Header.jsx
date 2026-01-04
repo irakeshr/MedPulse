@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 
 export default function Header() {
   const {profile}=useSelector((state)=>state.userDetail)
-  const profileImage=profile.patientProfile.profileImage;
+  const profileImage=profile?.patientProfile?.profileImage;
  
   // --- STATE ---
   // Mock Auth State (Replace with your auth context later)

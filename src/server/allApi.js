@@ -26,3 +26,11 @@ export const getUserProfile =async()=>{
   return await CommonApi("GET", `${SERVER_URL}/user/get-profile`);
 
 }
+export const getPost=async()=>{
+return await CommonApi("GET",`${SERVER_URL}/user/get-post`)
+}
+
+export const likePostApi=async(reqBody)=>{
+  return await CommonApi("POST",`${SERVER_URL}/user/like-unlike`,reqBody);
+
+}

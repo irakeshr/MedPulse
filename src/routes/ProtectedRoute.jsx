@@ -1,10 +1,11 @@
 import { useSelector, useDispatch } from "react-redux";
 import { Navigate, Outlet } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { tokenValidation, getUserProfile } from "../server/allApi";
+import { tokenValidation, getUserProfile, getPost } from "../server/allApi";
 import { loginSuccess, logout } from "../redux/authSlice";
 import { setUser, clearUser, setStats } from "../redux/userSlice";
 import MedPulseSplash from "../pages/MedPulseSplash";
+import { setPosts } from "../redux/postSlice";
 
 const ProtectedRoute = () => {
   const dispatch = useDispatch();
@@ -39,10 +40,14 @@ const ProtectedRoute = () => {
 
         //  Fetch user profile
         const profileRes = await getUserProfile();
+        const Post = await getPost();
+        dispatch(setPosts(Post));
+       
+        
         dispatch(setUser(profileRes.data));
-        console.log(profileRes.data)
+       
       } catch (err) {
-        console.error("Authentication failed:", err);
+        
         dispatch(logout());
         dispatch(clearUser());
       } finally {
@@ -69,7 +74,7 @@ const ProtectedRoute = () => {
   }
 
   /* ---------------- ROLE ROUTING ---------------- */
-  console.log(user)
+ 
   switch (user?.role) {
     case "doctor":
       return <Navigate to="/doctor/dashboard" replace />;

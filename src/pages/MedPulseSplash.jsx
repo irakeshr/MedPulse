@@ -6,7 +6,7 @@ const MedPulseSplash = ({ finishLoading, onAnimationComplete }) => {
   useEffect(() => {
     // We use a timer to simulate progress
     const timer = setInterval(() => {
-        console.log(1)
+       
       setProgress((prevProgress) => {
        
         // Rapidly fill the bar to 100%

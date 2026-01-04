@@ -83,7 +83,7 @@ const dispatch=useDispatch()
         );
       }
     } catch (error) {
-      console.error("Error updating profile:", error);
+     
       toast(
         <CustomToast
           title="Profile Update Failed"
