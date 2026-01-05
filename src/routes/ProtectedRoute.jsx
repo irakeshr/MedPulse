@@ -41,7 +41,9 @@ const ProtectedRoute = () => {
         //  Fetch user profile
         const profileRes = await getUserProfile();
         const Post = await getPost();
-        dispatch(setPosts(Post));
+        console.log(Post)
+         
+        dispatch(setPosts(Post.data.modifiedPosts));
        
         
         dispatch(setUser(profileRes.data));

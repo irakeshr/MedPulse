@@ -33,6 +33,7 @@ const FeedPage = () => {
 const dispatch =useDispatch();
   const [selectedDoctor, setSelectedDoctor] = useState(null);
   const post = useSelector((state)=>state.post.posts)
+  console.log(post)
   const { profile, stats } = useSelector((state) => state.userDetail)
   const [posted,setPosted]=useState(true);
  
@@ -111,8 +112,8 @@ const dispatch =useDispatch();
 useEffect(() => {
   const fetchPosts = async () => {
     try {
-      const res = await getPost();
-      dispatch(setPosts(res)); 
+      const Post = await getPost();
+      dispatch(setPosts(Post.data.modifiedPosts));
     } catch (error) {
       
       toast.error("Server not reachable. Try again later.");
@@ -160,7 +161,7 @@ useEffect(() => {
         {/* --- Feed Posts List --- */}
         <div className="flex flex-col gap-6">
           {post.map((post) => (
-            <PostCard key={post.id} post={post} isOwnPost={stats._id===post.author._id} />
+            <PostCard key={post._id} post={post} isOwnPost={stats._id===post.author._id} />
           ))}
         </div>
 

@@ -1,263 +1,404 @@
-import React, { useState } from 'react';
-import { likePostApi } from '../../server/allApi';
-import { useDispatch, useSelector } from 'react-redux';
-import { updateLike } from '../../redux/postSlice';
+import React, { useState, useMemo, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { formatDistanceToNow, isValid } from "date-fns";
+
+// API Imports
+import { likePostApi, createComment, getCommentsByPost } from "../../server/allApi";
+
+// Redux Imports
+import { updateLike } from "../../redux/postSlice";
+import { addComment, setComments } from "../../redux/commentSlice";
+
+// Component Imports
+import CommentItem from "./CommentItem";
+ 
 
 const PostCard = ({ post, isOwnPost = false }) => {
-  // --- STATE ---
-   // Assuming isLikedByUser comes from backend
+  const dispatch = useDispatch();
+
+  // --- STATE & SELECTORS ---
   const [showComments, setShowComments] = useState(false);
-  const [comments, setComments] = useState(post.commentIds || []);
   const [newComment, setNewComment] = useState("");
-  const { profile, stats } = useSelector((state) => state.userDetail)
- 
-const dispatch= useDispatch();
-  // --- HANDLERS ---
-  const isLiked = post.likedBy?.includes(stats._id);
-const likesCount = post.likesCount;
-  const handleLike = async (postId) => {
-     if (isOwnPost) return; 
   
-    const res = await likePostApi({postId:postId})
+  const { profile, stats } = useSelector((state) => state.userDetail);
+  
+  // Select comments specifically for this post
+  const comments = useSelector(
+    (state) => state.comment.byPostId?.[post._id] || []
+  );
+console.log(comments)
+  // --- HANDLERS ---
 
-     
-    dispatch(updateLike({
-       postId,
-    likesCount: res.data.likesCount,
-    liked: res.data.liked
-    }))
+  useEffect(()=>{
+   const loadCommentOnce= async()=>{
+try {
+        const res = await getCommentsByPost(post._id);
+        console.log(res)
+        if (res.data && res.data.comments) {
+          dispatch(setComments({ postId: post._id, comments: res.data.comments }));
+        }
+      } catch (error) {
+        console.error("Error fetching comments:", error);
+      }
+   }
+   loadCommentOnce();
+      
+  },[])
 
-    
+  // Toggle Comments & Fetch if empty
+  const handleToggleComments = async () => {
+    // Toggle UI first
+    const nextState = !showComments;
+    setShowComments(nextState);
+
+    // If opening and no comments loaded yet, fetch them
+    if (nextState && comments.length === 0) {
+      try {
+        const res = await getCommentsByPost(post._id);
+        if (res.data && res.data.comments) {
+          dispatch(setComments({ postId: post._id, comments: res.data.comments }));
+        }
+      } catch (error) {
+        console.error("Error fetching comments:", error);
+      }
+    }
   };
- 
 
-  const handleAddComment = () => {
+  // Like Management
+  const isLiked = post.likedBy?.includes(stats?._id);
+  const likesCount = post.likesCount || 0;
+
+  const handleLike = async (postId) => {
+    if (isOwnPost || !stats?._id) return; 
+
+    try {
+      // Optimistic update logic could go here, but currently relying on API first
+      await likePostApi({ postId: postId });
+      
+      dispatch(
+        updateLike({
+          postId: post._id,
+          userId: stats._id,
+          liked: !isLiked,
+        })
+      );
+    } catch (error) {
+      console.error("Error liking post:", error);
+    }
+  };
+
+  // Add Comment
+  const handleAddComment = async () => {
     if (!newComment.trim()) return;
-    const commentObj = {
-      id: Date.now(),
-      user: "You",
-      avatar: "https://ui-avatars.com/api/?name=You&background=random",
-      text: newComment,
-      timeAgo: "Just now"
-    };
-    setComments(prev => [...prev, commentObj]);
-    setNewComment("");
+    
+    try {
+      const res = await createComment(post._id, { text: newComment });
+      if (res.status === 201) {
+        dispatch(addComment({
+          postId: post._id,
+          comment: res.data.comment
+        }));
+        setNewComment("");
+        // After adding a comment, re-fetch all comments for the post to ensure the list is up-to-date
+        // This also handles cases where the server might return additional data not in the initial comment object
+        const updatedCommentsRes = await getCommentsByPost(post._id);
+        dispatch(setComments({ postId: post._id, comments: updatedCommentsRes.data.comments }));
+
+      }
+    } catch (error) {
+      console.error("Error adding comment:", error);
+    }
   };
+
+  // --- MEMOS ---
+  
+  const timeAgo = useMemo(() => {
+    if (!post?.createdAt) return "";
+    const date = new Date(post.createdAt);
+    if (!isValid(date)) return "";
+    return formatDistanceToNow(date, { addSuffix: true });
+  }, [post?.createdAt]);
 
   // --- HELPER STYLES ---
+  
   const getSeverityStyles = (severity) => {
     switch (severity?.toLowerCase()) {
-      case 'high': return 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'; // Assuming 'High' severity
-      case 'moderate': return 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300'; // Assuming 'Moderate' severity
-      case 'mild': return 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'; // Assuming 'Mild' severity
-      default: return 'bg-gray-100 text-gray-700';
+      case "high":
+        return "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300";
+      case "moderate":
+        return "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300";
+      case "mild":
+        return "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300";
+      default:
+        return "bg-gray-100 text-gray-700";
     }
   };
 
-  // Logic for Status Badge (Only for My Posts)
   const renderStatusBadge = () => {
-    if (!isOwnPost || !post.status) return null; // Assuming 'status' field exists for own posts
-    
-    if (post.status === 'open') {
-      return <span className="px-2 py-1 bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400 text-[10px] uppercase font-bold rounded-md tracking-wide">Unresolved</span>;
+    if (!isOwnPost || !post.status) return null;
+
+    if (post.status.toLowerCase() === "open") {
+      return (
+        <span className="px-2 py-1 bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400 text-[10px] uppercase font-bold rounded-md tracking-wide">
+          Unresolved
+        </span>
+      );
     }
-    if (post.status === 'Resolved') {
-      return <span className="px-2 py-1 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 text-[10px] uppercase font-bold rounded-md tracking-wide">Resolved</span>;
+    if (post.status.toLowerCase() === "resolved") {
+      return (
+        <span className="px-2 py-1 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 text-[10px] uppercase font-bold rounded-md tracking-wide">
+          Resolved
+        </span>
+      );
     }
+    return null;
   };
+
+  if (!post) return null;
 
   return (
-    <article 
-  className={`bg-white dark:bg-[#1a2c2c] rounded-2xl p-5 shadow-sm border border-[#e5e7eb] dark:border-[#2a3838] transition-all
-  ${post.status === 'Resolved' && isOwnPost ? 'opacity-80 hover:opacity-100' : ''}`}
->
-  {/* --- HEADER --- */}
-  <header className="flex justify-between items-start mb-4">
-    <div className="flex gap-3">
-      {/* Avatar Logic */}
-      {post.isAnonymous ? (
-         <div className="flex items-center justify-center bg-indigo-100 dark:bg-indigo-900/40 text-indigo-500 dark:text-indigo-300 rounded-full size-10 border border-transparent">
-            <span className="material-symbols-outlined">visibility_off</span>
-         </div>
-      ) : (
-        <div 
-          className="bg-center bg-no-repeat bg-cover rounded-full size-10 border border-gray-100 dark:border-gray-700" 
-          style={{ backgroundImage: `url(${post?.author?.avatar || post?.i})` }}
-        ></div>
-      )}
-      
-      <div>
+    <article
+      className={`bg-white dark:bg-[#1a2c2c] rounded-2xl p-5 shadow-sm border border-[#e5e7eb] dark:border-[#2a3838] transition-all
+        ${post.status === "Resolved" && isOwnPost ? "opacity-80 hover:opacity-100" : ""}`}
+    >
+      {/* --- HEADER --- */}
+      <header className="flex justify-between items-start mb-4">
+        <div className="flex gap-3">
+          {/* Avatar Logic */}
+          {post.isAnonymous ? (
+            <div className="flex items-center justify-center bg-indigo-100 dark:bg-indigo-900/40 text-indigo-500 dark:text-indigo-300 rounded-full size-10 border border-transparent">
+              <span className="material-symbols-outlined">visibility_off</span>
+            </div>
+          ) : (
+            <div
+              className="bg-center bg-no-repeat bg-cover rounded-full size-10 border border-gray-100 dark:border-gray-700"
+              style={{
+                backgroundImage: `url(${post?.author?.profileImage || ""})`,
+              }}
+            ></div>
+          )}
+
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="font-bold text-med-dark dark:text-white text-sm">
+                {isOwnPost
+                  ? profile?.patientProfile?.displayName || "You"
+                  : post.author?.username}
+              </h3>
+              <span className="text-xs text-med-text-secondary dark:text-gray-500">
+                •
+              </span>
+              <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-med-gray dark:bg-[#253636] text-med-dark dark:text-gray-300 text-xs font-medium">
+                <span className="material-symbols-outlined text-[14px] mr-1">
+                  schedule
+                </span>
+                {timeAgo}
+              </span>
+            </div>
+            <div className="flex items-center gap-1 text-xs text-med-text-secondary dark:text-gray-400 mt-0.5">
+              <span className="material-symbols-outlined text-[14px]">
+                {post.isAnonymous ? "lock" : "location_on"}
+              </span>
+              {post.isAnonymous ? "Private Identity" : post.location}
+            </div>
+          </div>
+        </div>
+
+        {/* Status Badge & Menu */}
         <div className="flex items-center gap-2">
-          <h3 className="font-bold text-med-dark dark:text-white text-sm">
-            {isOwnPost ? (post.isAnonymous ? "You (Anonymous)" : "You") : post.author?.username}
-          </h3>
-          <span className="text-xs text-med-text-secondary dark:text-gray-500">•</span>
-          <span className="text-xs text-med-text-secondary dark:text-gray-500">{new Date(post.createdAt).toLocaleDateString()}</span>
+          {renderStatusBadge()}
+          <button className="text-med-text-secondary dark:text-gray-500 hover:bg-med-gray dark:hover:bg-[#253636] p-1 rounded-full">
+            <span className="material-symbols-outlined">more_horiz</span>
+          </button>
         </div>
-        <div className="flex items-center gap-1 text-xs text-med-text-secondary dark:text-gray-400 mt-0.5">
-          <span className="material-symbols-outlined text-[14px]">
-            {isOwnPost ? (post.isAnonymous ? 'lock' : 'public') : post.isAnonymous ? 'lock':'location_on'}
+      </header>
+
+      {/* --- CONTENT --- */}
+      <div className="mb-4">
+        <h4 className="text-lg font-semibold text-med-dark dark:text-white mb-2">
+          {post.title}
+        </h4>
+        <p className="text-med-dark dark:text-gray-300 text-sm leading-relaxed">
+          {post.content}
+        </p>
+
+        {/* image section */}
+        {post.images && post.images.length > 0 && (
+          <div className="mt-3">
+            <img
+              src={post.images[0]}
+              alt="Post visualization"
+              className="w-full h-64 object-cover rounded-xl border border-gray-100 dark:border-[#2a3838]"
+            />
+          </div>
+        )}
+      </div>
+
+      {/* --- TAGS --- */}
+      <div className="flex flex-wrap gap-2 mb-4">
+        {post.severity && (
+          <span
+            className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium ${
+              getSeverityStyles(post.severity)
+            }`}
+          >
+            Severity: {post.severity}
           </span>
-          {isOwnPost ? (post.isAnonymous ? 'Private Identity' : 'Public') : post.isAnonymous ? "Private Identity" : post.location}
+        )}
+
+        {post.tags &&
+          post.tags.map((tag, index) => (
+            <span
+              key={index}
+              className="inline-flex items-center px-2.5 py-1 rounded-lg bg-primary/10 text-teal-800 dark:text-primary text-xs font-medium border border-primary/20"
+            >
+              #{tag}
+            </span>
+          ))}
+      </div>
+
+      {/* --- FOOTER ACTIONS --- */}
+      <div className="flex items-center justify-between border-t border-[#f0f4f4] dark:border-[#2a3838] pt-3">
+        <div className="flex gap-4">
+          {/* LEFT ACTION */}
+          {isOwnPost && post.doctorResponded ? (
+            <div className="flex items-center gap-1.5 text-sm text-primary font-medium">
+              <span className="material-symbols-outlined text-[20px]">
+                check_circle
+              </span>
+              <span>Doctor Responded</span>
+            </div>
+          ) : (
+            <button
+              onClick={() => handleLike(post._id)}
+              disabled={isOwnPost}
+              className={`flex items-center gap-1.5 text-sm transition-colors ${
+                isLiked
+                  ? "text-primary font-medium"
+                  : "text-med-text-secondary dark:text-gray-400 hover:text-primary"
+              }`}
+            >
+              <span
+                className={`material-symbols-outlined text-[20px] ${
+                  isLiked ? "fill" : ""
+                }`}
+              >
+                thumb_up
+              </span>
+              <span>{likesCount} Helpful</span>
+            </button>
+          )}
+
+          {/* MIDDLE ACTION */}
+          <button
+            onClick={handleToggleComments}
+            className={`flex items-center gap-1.5 text-sm transition-colors ${
+              showComments
+                ? "text-primary font-medium"
+                : "text-med-text-secondary dark:text-gray-400 hover:text-primary"
+            }`}
+          >
+            <span className="material-symbols-outlined text-[20px]">
+              chat_bubble
+            </span>
+            <span>
+              {post.commentCount || (comments ? comments.length : 0)} Comments
+            </span>
+          </button>
         </div>
+
+        {/* RIGHT ACTION */}
+        {isOwnPost ? (
+          <button className="flex items-center gap-1.5 text-sm text-med-text-secondary dark:text-gray-400 hover:text-primary transition-colors">
+            <span className="material-symbols-outlined text-[20px]">edit</span>
+            <span>Edit</span>
+          </button>
+        ) : (
+          <button className="flex items-center gap-1.5 text-sm text-med-text-secondary dark:text-gray-400 hover:text-primary transition-colors">
+            <span className="material-symbols-outlined text-[20px]">share</span>
+            <span>Share</span>
+          </button>
+        )}
       </div>
-    </div>
 
-    {/* Status Badge & Menu */}
-    <div className="flex items-center gap-2">
-      {/* Assuming renderStatusBadge is a function you have defined elsewhere */}
-      {renderStatusBadge && renderStatusBadge(post)} 
-      <button className="text-med-text-secondary dark:text-gray-500 hover:bg-med-gray dark:hover:bg-[#253636] p-1 rounded-full">
-        <span className="material-symbols-outlined">more_horiz</span>
-      </button>
-    </div>
-  </header>
-
-  {/* --- CONTENT --- */}
-  <div className="mb-4">
-    <h4 className="text-lg font-semibold text-med-dark dark:text-white mb-2">{post.title}</h4>
-    <p className="text-med-dark dark:text-gray-300 text-sm leading-relaxed">
-      {post.content}
-    </p>
-
-     {/* image section */}
-    {post.images && post.images.length > 0 && (
-      <div className="mt-3">
-        <img 
-          src={post.images[0]
-} 
-          alt="Post visualization" 
-          className="w-full h-64 object-cover rounded-xl border border-gray-100 dark:border-[#2a3838]"
-        />
-      </div>
-    )}
-  </div>
-
-  {/* --- TAGS --- */}
-  <div className="flex flex-wrap gap-2 mb-4">
-    {post.severity && (
-        <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium ${getSeverityStyles ? getSeverityStyles(post.severity) : 'bg-red-100 text-red-800'}`}>
-        Severity: {post.severity}
-        </span>
-    )}
-    <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-med-gray dark:bg-[#253636] text-med-dark dark:text-gray-300 text-xs font-medium">
-      <span className="material-symbols-outlined text-[14px] mr-1">schedule</span> {post.duration}
-    </span>
-    {post.tags && post.tags.map((tag, index) => (
-        <span key={index} className="inline-flex items-center px-2.5 py-1 rounded-lg bg-primary/10 text-teal-800 dark:text-primary text-xs font-medium border border-primary/20">
-        #{tag}
-        </span>
-    ))}
-  </div>
-
-  {/* --- FOOTER ACTIONS --- */}
-  <div className="flex items-center justify-between border-t border-[#f0f4f4] dark:border-[#2a3838] pt-3">
-    <div className="flex gap-4">
-      
-      {/* LEFT ACTION */}
-      {isOwnPost && post.doctorResponded ? (
-         <div className="flex items-center gap-1.5 text-sm text-primary font-medium">
-            <span className="material-symbols-outlined text-[20px]">check_circle</span>
-            <span>Doctor Responded</span>
-         </div>
-      ) : (
-        <button 
-          onClick={()=>handleLike(post._id)}
-          disabled={isOwnPost} 
-          className={`flex items-center gap-1.5 text-sm transition-colors ${isLiked ? 'text-primary font-medium' : 'text-med-text-secondary dark:text-gray-400 hover:text-primary'}`}
-        >
-          <span className={`material-symbols-outlined text-[20px] ${isLiked ? 'fill' : ''}`}>thumb_up</span>
-          <span>{likesCount} Helpful</span>
-        </button>
+      {/* --- DOCTOR RESPONSE --- */}
+      {post.doctorResponseData && (
+        <div className="mt-4 bg-primary/5 dark:bg-[#13ecec]/5 border border-primary/20 rounded-xl p-3">
+          <div className="flex gap-3">
+            <div className="relative">
+              <div
+                className="bg-center bg-no-repeat bg-cover rounded-full size-8 border border-gray-200"
+                style={{
+                  backgroundImage: `url(${post.doctorResponseData.image})`,
+                }}
+              ></div>
+              <div className="absolute -bottom-1 -right-1 bg-white dark:bg-[#1a2c2c] rounded-full p-0.5">
+                <span className="material-symbols-outlined text-primary text-[14px] fill">
+                  verified
+                </span>
+              </div>
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="font-bold text-sm text-med-dark dark:text-white">
+                  {post.doctorResponseData.name}
+                </span>
+                <span className="px-1.5 py-0.5 rounded bg-primary text-[#111818] text-[10px] font-bold uppercase tracking-wide">
+                  Physician
+                </span>
+              </div>
+              <p className="text-sm text-med-dark dark:text-gray-300 leading-snug">
+                {post.doctorResponseData.text}
+              </p>
+            </div>
+          </div>
+        </div>
       )}
 
-      {/* MIDDLE ACTION */}
-      <button 
-        onClick={() => setShowComments(!showComments)}
-        className={`flex items-center gap-1.5 text-sm transition-colors ${showComments ? 'text-primary font-medium' : 'text-med-text-secondary dark:text-gray-400 hover:text-primary'}`}
-      >
-        <span className="material-symbols-outlined text-[20px]">chat_bubble</span>
-        <span>{post.commentCount || (comments ? comments.length : 0)} Comments</span>
-      </button>
-    </div>
-    
-    {/* RIGHT ACTION */}
-    {isOwnPost ? (
-      <button className="flex items-center gap-1.5 text-sm text-med-text-secondary dark:text-gray-400 hover:text-primary transition-colors">
-        <span className="material-symbols-outlined text-[20px]">edit</span>
-        <span>Edit</span>
-      </button>
-    ) : (
-      <button className="flex items-center gap-1.5 text-sm text-med-text-secondary dark:text-gray-400 hover:text-primary transition-colors">
-        <span className="material-symbols-outlined text-[20px]">share</span>
-        <span>Share</span>
-      </button>
-    )}
-  </div>
+      {/* --- COMMENTS SECTION --- */}
+      {showComments && (
+        <div className="mt-4 pt-4 border-t border-[#e5e7eb] dark:border-[#2a3838] animate-in fade-in slide-in-from-top-1 pl-12">
+          {/* Add Comment Input */}
+          <div className="flex gap-3 mb-6">
+            <div className="size-8 rounded-full bg-gray-200 dark:bg-[#253636] flex items-center justify-center shrink-0">
+              <span className="material-symbols-outlined text-sm text-gray-500">
+                person
+              </span>
+            </div>
+            <div className="flex-1 relative">
+              <textarea
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                placeholder="What are your thoughts?"
+                className="w-full bg-gray-50 dark:bg-[#203030] border border-transparent focus:border-primary/50 focus:bg-white dark:focus:bg-[#1a2c2c] rounded-xl text-sm p-3 min-h-[80px] resize-none text-med-dark dark:text-white transition-all"
+              />
+              <div className="flex justify-end mt-2">
+                <button
+                  onClick={handleAddComment}
+                  disabled={!newComment.trim()}
+                  className="px-4 py-1.5 bg-primary hover:bg-primary/90 text-med-dark text-xs font-bold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  Comment
+                </button>
+              </div>
+            </div>
+          </div>
 
-  {/* --- DOCTOR RESPONSE --- */}
-  {post.doctorResponseData && (
-    <div className="mt-4 bg-primary/5 dark:bg-[#13ecec]/5 border border-primary/20 rounded-xl p-3">
-      <div className="flex gap-3">
-        <div className="relative">
-          <div 
-            className="bg-center bg-no-repeat bg-cover rounded-full size-8 border border-gray-200" 
-            style={{ backgroundImage: `url(${post.doctorResponseData.image})` }}
-          ></div>
-          <div className="absolute -bottom-1 -right-1 bg-white dark:bg-[#1a2c2c] rounded-full p-0.5">
-            <span className="material-symbols-outlined text-primary text-[14px] fill">verified</span>
+          {/* Comments List */}
+          <div className="flex flex-col gap-4">
+            {comments.length > 0 ? (
+              comments.map((comment, index) => (
+                <CommentItem key={comment._id || comment.id || index} comment={comment} />
+              ))
+            ) : (
+              <p className="text-center text-xs text-gray-400 py-4">
+                No comments yet. Be the first to share!
+              </p>
+            )}
           </div>
         </div>
-        <div className="flex-1">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="font-bold text-sm text-med-dark dark:text-white">{post.doctorResponseData.name}</span>
-            <span className="px-1.5 py-0.5 rounded bg-primary text-[#111818] text-[10px] font-bold uppercase tracking-wide">Physician</span>
-          </div>
-          <p className="text-sm text-med-dark dark:text-gray-300 leading-snug">
-           {post.doctorResponseData.text}
-          </p>
-        </div>
-      </div>
-    </div>
-  )}
-
-  {/* --- COMMENTS SECTION --- */}
-  {showComments && (
-    <div className="mt-4 pt-4 border-t border-gray-100 dark:border-[#2a3838]">
-      <div className="flex flex-col gap-3 mb-4">
-        {comments && comments.map((comment) => (
-           <div key={comment.id} className="flex gap-2">
-             <div className="size-8 rounded-full bg-gray-200 bg-center bg-cover shrink-0" style={{ backgroundImage: `url(${comment.avatar})` }}></div>
-             <div className="bg-gray-50 dark:bg-[#203030] p-2.5 rounded-r-xl rounded-bl-xl text-sm flex-1">
-               <div className="flex justify-between items-baseline mb-1">
-                 <span className="font-bold text-med-dark dark:text-white text-xs">{comment.user}</span>
-                 <span className="text-[10px] text-gray-500">{comment.timeAgo}</span>
-               </div>
-               <p className="text-gray-700 dark:text-gray-300">{comment.text}</p>
-             </div>
-           </div>
-        ))}
-      </div>
-      {/* Comment Input */}
-      <div className="flex gap-2 items-start">
-         <div className="size-8 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
-            <span className="material-symbols-outlined text-sm text-primary">person</span>
-         </div>
-         <div className="flex-1 relative">
-            <textarea 
-              value={newComment}
-              onChange={(e) => setNewComment(e.target.value)}
-              placeholder="Write a helpful comment..." 
-              className="w-full bg-gray-50 dark:bg-[#203030] border-transparent focus:border-primary/50 focus:ring-0 rounded-xl text-sm p-3 min-h-[40px] resize-none pr-10 text-med-dark dark:text-white"
-            />
-            <button onClick={handleAddComment} className="absolute right-2 top-2 p-1 text-primary hover:bg-primary/10 rounded-full transition-colors">
-              <span className="material-symbols-outlined text-[20px]">send</span>
-            </button>
-         </div>
-      </div>
-    </div>
-  )}
-</article>
+      )}
+    </article>
   );
 };
 
