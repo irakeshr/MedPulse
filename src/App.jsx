@@ -15,6 +15,7 @@ import ProtectedRoute from './routes/ProtectedRoute';
 import DoctorRoute from './routes/DoctorRoute';
  import 'react-toastify/dist/ReactToastify.css';
 import PatientFeedback from './Doctor/pages/PatientFeedback';
+import SavedCases from './Doctor/pages/SavedCases';
 const App = () => {
   return (
     <div >
@@ -46,6 +47,7 @@ const App = () => {
  <Route element={<DoctorLayout />}>
           <Route path="/doctor/dashboard" element={<DoctorDashboard />} />
           <Route path="/doctor/reviews" element={<PatientFeedback />} />
+          <Route path="/doctor/saved" element={<SavedCases />} />
         </Route>
         </Route>
        

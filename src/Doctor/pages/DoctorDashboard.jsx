@@ -84,7 +84,7 @@ const DISCUSSIONS = [
 
 export default function DoctorDashboard() {
   return (
-    <main className="flex-1 bg-white flex flex-col h-full overflow-hidden relative bg-[#F2F4F7] dark:bg-[#111818]">
+    <main className="flex-1 bg-white flex flex-col h-full overflow-hidden relative bg-[#F2F4F7] dark:bg-[#1a2c2c] ">
       
       {/* Mobile Header */}
       <header className="lg:hidden flex items-center justify-between p-4 bg-surface-light dark:bg-surface-dark border-b border-[#dbe6e6] dark:border-[#2a3c3c]">

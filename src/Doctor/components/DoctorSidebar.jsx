@@ -12,7 +12,7 @@ const NAV_LINKS = [
     path: "/doctor/reviews", 
     label: "My Reviews", 
     icon: "forum", 
-    badge: 4 // Example notification count
+    // badge: ""// Example notification count
   },
   { 
     path: "/doctor/saved", 
