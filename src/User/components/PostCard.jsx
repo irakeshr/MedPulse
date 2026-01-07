@@ -270,41 +270,54 @@ try {
             </div>
           ) : (
             <button
-              onClick={() => handleLike(post._id)}
-              disabled={isOwnPost}
-              className={`flex items-center gap-1.5 text-sm transition-colors ${
-                isLiked
-                  ? "text-primary font-medium"
-                  : "text-med-text-secondary dark:text-gray-400 hover:text-primary"
-              }`}
-            >
-              <span
-                className={`material-symbols-outlined text-[20px] ${
-                  isLiked ? "fill" : ""
-                }`}
-              >
-                thumb_up
-              </span>
-              <span>{likesCount} Helpful</span>
-            </button>
+  onClick={() => handleLike(post._id)}
+  disabled={isOwnPost}
+  className="focus:outline-none" // Removed redundant classes from wrapper, moved logic inside
+>
+  <span
+    className={`inline-flex items-center px-3 py-2 rounded-lg text-[15px] font-medium transition-colors ${
+      isLiked
+        ? "bg-primary/10 text-primary" // Suggestion: Use a light bg for active state
+        : "bg-med-gray dark:bg-[#253636] text-med-text-secondary dark:text-gray-400 hover:text-primary"
+    }`}
+  >
+    <span
+      className={`material-symbols-outlined text-[20px] mr-2 ${
+        isLiked ? "fill-current" : ""
+      }`}
+      style={isLiked ? { fontVariationSettings: "'FILL' 1" } : {}}
+    >
+      thumb_up
+    </span>
+    
+    <span>
+      {likesCount} {!isLiked && "Helpful"}
+    </span>
+  </span>
+</button>
           )}
 
           {/* MIDDLE ACTION */}
           <button
-            onClick={handleToggleComments}
-            className={`flex items-center gap-1.5 text-sm transition-colors ${
-              showComments
-                ? "text-primary font-medium"
-                : "text-med-text-secondary dark:text-gray-400 hover:text-primary"
-            }`}
-          >
-            <span className="material-symbols-outlined text-[20px]">
-              chat_bubble
-            </span>
-            <span>
-              {post.commentCount || (comments ? comments.length : 0)} Comments
-            </span>
-          </button>
+  onClick={handleToggleComments}
+  className="focus:outline-none"
+>
+  <span
+    className={`inline-flex items-center px-3 py-2 rounded-lg text-[15px] font-medium transition-colors ${
+      showComments
+        ? "bg-primary/10 text-primary" // Active State
+        : "bg-med-gray dark:bg-[#253636] text-med-text-secondary dark:text-gray-400 hover:text-primary" // Inactive State
+    }`}
+  >
+    <span className="material-symbols-outlined text-[20px] mr-2">
+      chat_bubble
+    </span>
+    
+    <span>
+      {post.commentCount || (comments ? comments.length : 0)}
+    </span>
+  </span>
+</button>
         </div>
 
         {/* RIGHT ACTION */}
