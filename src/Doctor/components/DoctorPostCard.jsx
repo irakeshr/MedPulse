@@ -1,0 +1,263 @@
+import React, { useState, useMemo, useEffect } from "react";
+ 
+
+// Component Imports
+import CommentItem from "./CommentItem";
+ 
+
+const PostCard = ({ post, isOwnPost = false }) => {
+   
+
+  // --- STATE & SELECTORS ---
+  const [showComments, setShowComments] = useState(false);
+  const [newComment, setNewComment] = useState("");
+  
+ 
+
+  return (
+    <article
+      className={`bg-white dark:bg-[#1a2c2c] rounded-2xl p-5 shadow-sm border border-[#e5e7eb] dark:border-[#2a3838] transition-all
+        ${post.status === "Resolved" && isOwnPost ? "opacity-80 hover:opacity-100" : ""}`}
+    >
+      {/* --- HEADER --- */}
+      <header className="flex justify-between items-start mb-4">
+        <div className="flex gap-3">
+          {/* Avatar Logic */}
+          {post.isAnonymous ? (
+            <div className="flex items-center justify-center bg-indigo-100 dark:bg-indigo-900/40 text-indigo-500 dark:text-indigo-300 rounded-full size-10 border border-transparent">
+              <span className="material-symbols-outlined">visibility_off</span>
+            </div>
+          ) : (
+            <div
+              className="bg-center bg-no-repeat bg-cover rounded-full size-10 border border-gray-100 dark:border-gray-700"
+              style={{
+                backgroundImage: `url(${post?.author?.profileImage || ""})`,
+              }}
+            ></div>
+          )}
+
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="font-bold text-med-dark dark:text-white text-sm">
+                {isOwnPost
+                  ? profile?.patientProfile?.displayName || "You"
+                  : post.author?.username}
+              </h3>
+              <span className="text-xs text-med-text-secondary dark:text-gray-500">
+                •
+              </span>
+              <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-med-gray dark:bg-[#253636] text-med-dark dark:text-gray-300 text-xs font-medium">
+                <span className="material-symbols-outlined text-[14px] mr-1">
+                  schedule
+                </span>
+                {timeAgo}
+              </span>
+            </div>
+            <div className="flex items-center gap-1 text-xs text-med-text-secondary dark:text-gray-400 mt-0.5">
+              <span className="material-symbols-outlined text-[14px]">
+                {post.isAnonymous ? "lock" : "location_on"}
+              </span>
+              {post.isAnonymous ? "Private Identity" : post.location}
+            </div>
+          </div>
+        </div>
+
+        {/* Status Badge & Menu */}
+        <div className="flex items-center gap-2">
+          {renderStatusBadge()}
+          <button className="text-med-text-secondary dark:text-gray-500 hover:bg-med-gray dark:hover:bg-[#253636] p-1 rounded-full">
+            <span className="material-symbols-outlined">more_horiz</span>
+          </button>
+        </div>
+      </header>
+
+      {/* --- CONTENT --- */}
+      <div className="mb-4">
+        <h4 className="text-lg font-semibold text-med-dark dark:text-white mb-2">
+          {post.title}
+        </h4>
+        <p className="text-med-dark dark:text-gray-300 text-sm leading-relaxed">
+          {post.content}
+        </p>
+
+        {/* image section */}
+        {post.images && post.images.length > 0 && (
+          <div className="mt-3">
+            <img
+              src={post.images[0]}
+              alt="Post visualization"
+              className="w-full h-64 object-cover rounded-xl border border-gray-100 dark:border-[#2a3838]"
+            />
+          </div>
+        )}
+      </div>
+
+      {/* --- TAGS --- */}
+      <div className="flex flex-wrap gap-2 mb-4">
+        {post.severity && (
+          <span
+            className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium ${
+              getSeverityStyles(post.severity)
+            }`}
+          >
+            Severity: {post.severity}
+          </span>
+        )}
+
+        {post.tags &&
+          post.tags.map((tag, index) => (
+            <span
+              key={index}
+              className="inline-flex items-center px-2.5 py-1 rounded-lg bg-primary/10 text-teal-800 dark:text-primary text-xs font-medium border border-primary/20"
+            >
+              #{tag}
+            </span>
+          ))}
+      </div>
+
+      {/* --- FOOTER ACTIONS --- */}
+      <div className="flex items-center justify-between border-t border-[#f0f4f4] dark:border-[#2a3838] pt-3">
+        <div className="flex gap-4">
+          {/* LEFT ACTION */}
+          {isOwnPost && post.doctorResponded ? (
+            <div className="flex items-center gap-1.5 text-sm text-primary font-medium">
+              <span className="material-symbols-outlined text-[20px]">
+                check_circle
+              </span>
+              <span>Doctor Responded</span>
+            </div>
+          ) : (
+            <button
+              onClick={() => handleLike(post._id)}
+              disabled={isOwnPost}
+              className={`flex items-center gap-1.5 text-sm transition-colors ${
+                isLiked
+                  ? "text-primary font-medium"
+                  : "text-med-text-secondary dark:text-gray-400 hover:text-primary"
+              }`}
+            >
+              <span
+                className={`material-symbols-outlined text-[20px] ${
+                  isLiked ? "fill" : ""
+                }`}
+              >
+                thumb_up
+              </span>
+              <span>{likesCount} Helpful</span>
+            </button>
+          )}
+
+          {/* MIDDLE ACTION */}
+          <button
+            onClick={handleToggleComments}
+            className={`flex items-center gap-1.5 text-sm transition-colors ${
+              showComments
+                ? "text-primary font-medium"
+                : "text-med-text-secondary dark:text-gray-400 hover:text-primary"
+            }`}
+          >
+            <span className="material-symbols-outlined text-[20px]">
+              chat_bubble
+            </span>
+            <span>
+              {post.commentCount || (comments ? comments.length : 0)} Comments
+            </span>
+          </button>
+        </div>
+
+        {/* RIGHT ACTION */}
+        {isOwnPost ? (
+          <button className="flex items-center gap-1.5 text-sm text-med-text-secondary dark:text-gray-400 hover:text-primary transition-colors">
+            <span className="material-symbols-outlined text-[20px]">edit</span>
+            <span>Edit</span>
+          </button>
+        ) : (
+          <button className="flex items-center gap-1.5 text-sm text-med-text-secondary dark:text-gray-400 hover:text-primary transition-colors">
+            <span className="material-symbols-outlined text-[20px]">share</span>
+            <span>Share</span>
+          </button>
+        )}
+      </div>
+
+      {/* --- DOCTOR RESPONSE --- */}
+      {post.doctorResponseData && (
+        <div className="mt-4 bg-primary/5 dark:bg-[#13ecec]/5 border border-primary/20 rounded-xl p-3">
+          <div className="flex gap-3">
+            <div className="relative">
+              <div
+                className="bg-center bg-no-repeat bg-cover rounded-full size-8 border border-gray-200"
+                style={{
+                  backgroundImage: `url(${post.doctorResponseData.image})`,
+                }}
+              ></div>
+              <div className="absolute -bottom-1 -right-1 bg-white dark:bg-[#1a2c2c] rounded-full p-0.5">
+                <span className="material-symbols-outlined text-primary text-[14px] fill">
+                  verified
+                </span>
+              </div>
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="font-bold text-sm text-med-dark dark:text-white">
+                  {post.doctorResponseData.name}
+                </span>
+                <span className="px-1.5 py-0.5 rounded bg-primary text-[#111818] text-[10px] font-bold uppercase tracking-wide">
+                  Physician
+                </span>
+              </div>
+              <p className="text-sm text-med-dark dark:text-gray-300 leading-snug">
+                {post.doctorResponseData.text}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- COMMENTS SECTION --- */}
+      {showComments && (
+        <div className="mt-4 pt-4 border-t border-[#e5e7eb] dark:border-[#2a3838] animate-in fade-in slide-in-from-top-1 pl-12">
+          {/* Add Comment Input */}
+          <div className="flex gap-3 mb-6">
+            <div className="size-8 rounded-full bg-gray-200 dark:bg-[#253636] flex items-center justify-center shrink-0">
+              <span className="material-symbols-outlined text-sm text-gray-500">
+                person
+              </span>
+            </div>
+            <div className="flex-1 relative">
+              <textarea
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                placeholder="What are your thoughts?"
+                className="w-full bg-gray-50 dark:bg-[#203030] border border-transparent focus:border-primary/50 focus:bg-white dark:focus:bg-[#1a2c2c] rounded-xl text-sm p-3 min-h-[80px] resize-none text-med-dark dark:text-white transition-all"
+              />
+              <div className="flex justify-end mt-2">
+                <button
+                  onClick={handleAddComment}
+                  disabled={!newComment.trim()}
+                  className="px-4 py-1.5 bg-primary hover:bg-primary/90 text-med-dark text-xs font-bold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  Comment
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Comments List */}
+          <div className="flex flex-col gap-4">
+            {comments.length > 0 ? (
+              comments.map((comment, index) => (
+                <CommentItem key={comment._id || comment.id || index} comment={comment} />
+              ))
+            ) : (
+              <p className="text-center text-xs text-gray-400 py-4">
+                No comments yet. Be the first to share!
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+    </article>
+  );
+};
+
+export default PostCard;

@@ -26,7 +26,7 @@ export default function DoctorLayout() {
               Since the "Right Side" is now inside the pages, we need 
               more room here to fit both the Feed AND the new Right Sidebar.
            */}
-           <div className="w-full max-w-[1200px] mx-auto py-6 px-4 lg:px-8">
+           <div className="w-full max-w-[1200px] mx-auto py-4 px-3 lg:px-8 ">
               <Outlet />
            </div>
         </main>
