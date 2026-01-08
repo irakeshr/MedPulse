@@ -18,7 +18,7 @@ const UserSideBar = () => {
       
       {/* --- NAVIGATION LINKS --- */}
       <div className="flex flex-col gap-2">
-        <Link to="/me" className={`flex items-center gap-3 px-4 py-3 rounded-xl ${active("/")}`}>
+        <Link to="/me" className={`flex items-center gap-3 px-4 py-3 rounded-xl ${active("/me")}`}>
           <span className={`material-symbols-outlined ${activeIcon("/me")}`}>home</span>
           <span>Home Feed</span>
         </Link>

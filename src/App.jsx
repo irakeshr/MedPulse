@@ -18,6 +18,10 @@ import PatientFeedback from './Doctor/pages/PatientFeedback';
 import SavedCases from './Doctor/pages/SavedCases';
 import SchedulePage from './Doctor/pages/SchedulePage';
 import DoctorSettings from './Doctor/pages/DoctorSettings';
+import AdminDashboard from './Admin/pages/AdminDashboard';
+import AdminLayout from './Admin/pages/AdminLayout';
+import UserSideBar from './User/components/UserSideBar';
+import AdminUsers from './Admin/pages/AdminUsers';
 const App = () => {
   return (
     <div >
@@ -54,9 +58,23 @@ const App = () => {
           <Route path="/doctor/settings" element={< DoctorSettings/>} />
         </Route>
         </Route>
-       
+
+
+{/* Admin Protected Routes */}
+
+ <Route element={<AdminLayout/>}>
+
+ <Route path="/admin" element={<AdminDashboard />} />
+ <Route path="/admin/users" element={<AdminUsers/>} />
+ 
+ 
+ </Route>
 
     </Routes>
+
+   
+
+    
       
     </div>
   );
