@@ -22,6 +22,10 @@ import AdminDashboard from './Admin/pages/AdminDashboard';
 import AdminLayout from './Admin/pages/AdminLayout';
 import UserSideBar from './User/components/UserSideBar';
 import AdminUsers from './Admin/pages/AdminUsers';
+import AdminVerification from './Admin/pages/AdminVerification';
+import AdminModeration from './Admin/pages/AdminModeration';
+import AdminTopics from './Admin/pages/AdminTopics';
+import AdminSettings from './Admin/pages/AdminSettings';
 const App = () => {
   return (
     <div >
@@ -66,6 +70,10 @@ const App = () => {
 
  <Route path="/admin" element={<AdminDashboard />} />
  <Route path="/admin/users" element={<AdminUsers/>} />
+ <Route path="/admin/verify" element={<AdminVerification/>} />
+ <Route path="/admin/moderation" element={<AdminModeration/>} />
+ <Route path="/admin/topics" element={<AdminTopics/>} />
+ <Route path="/admin/settings" element={<AdminSettings/>} />
  
  
  </Route>
