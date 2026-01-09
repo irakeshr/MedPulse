@@ -17,7 +17,7 @@ import {  updateUserProfile } from '../../redux/userSlice';
 export default function ProfilePage() {
     const { profile, stats } = useSelector((state) => state.userDetail);
   
-
+console.log(profile)
 const user = {
   patientProfile: profile,
   stats,

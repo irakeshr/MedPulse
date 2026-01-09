@@ -26,6 +26,7 @@ import AdminVerification from './Admin/pages/AdminVerification';
 import AdminModeration from './Admin/pages/AdminModeration';
 import AdminTopics from './Admin/pages/AdminTopics';
 import AdminSettings from './Admin/pages/AdminSettings';
+import ProtectedAdmin from './routes/ProtectedAdmin';
 const App = () => {
   return (
     <div >
@@ -52,6 +53,8 @@ const App = () => {
       </Route>
 
       {/* PROTECTED DOCTOR ROUTES */}
+
+      
     
        <Route element={<DoctorRoute/>}>
  <Route element={<DoctorLayout />}>
@@ -65,8 +68,8 @@ const App = () => {
 
 
 {/* Admin Protected Routes */}
-
- <Route element={<AdminLayout/>}>
+<Route element={<ProtectedAdmin/>}>
+       <Route element={<AdminLayout/>}>
 
  <Route path="/admin" element={<AdminDashboard />} />
  <Route path="/admin/users" element={<AdminUsers/>} />
@@ -76,7 +79,9 @@ const App = () => {
  <Route path="/admin/settings" element={<AdminSettings/>} />
  
  
- </Route>
+ </Route>  
+      </Route>
+
 
     </Routes>
 

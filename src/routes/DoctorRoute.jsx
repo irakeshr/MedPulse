@@ -1,74 +1,88 @@
 import { useSelector, useDispatch } from "react-redux";
-import { logout } from "../redux/authSlice";
-import { Outlet, Navigate } from "react-router-dom";
+import { Navigate, Outlet } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { tokenValidation } from "../server/allApi";
-import { setUser } from "../redux/authSlice";
-import MedPulseSplash from "../pages/MedPulseSplash";
+import { tokenValidation , getDoctorProfile } from "../server/allApi";
+import { loginSuccess, logout } from "../redux/authSlice";
+ import MedPulseSplash from "../pages/MedPulseSplash";
+ import { clearDoctor, setDoctor, setDoctorState } from "../redux/doctorSlicer";
 
-const DoctorRoute = () => {
-    const dispatch = useDispatch();
-    const { isAuthenticated, user } = useSelector((state) => state.auth);
-    const [isValidating, setIsValidating] = useState(true);
+const ProtectedRoute = () => {
+  const dispatch = useDispatch();
+  const { isAuthenticated } = useSelector((state) => state.auth);
+  const { profile: user } = useSelector((state) => state.doctor);
+  console.log(user)
 
-      const [showSplash, setShowSplash] = useState(true);
+  const [isValidating, setIsValidating] = useState(true);
+  const [showSplash, setShowSplash] = useState(true);
 
-    useEffect(() => {
-        const token = localStorage.getItem("token");
+  useEffect(() => {
+    const token = localStorage.getItem("token"); 
 
-        if (!token) {
-            dispatch(logout());
-            setIsValidating(false);
-            return;
+    if (!token) {
+      dispatch(logout());
+      dispatch(clearDoctor());
+      setIsValidating(false);
+      return;
+    }
+
+    const validateAuth = async () => {
+      try {
+        //  Validate token
+        const tokenRes = await tokenValidation();
+        
+
+        if (!tokenRes?.data?.success) {
+          throw new Error("Invalid token");
         }
 
-        const validateToken = async () => {
-            try {
-                const res = await tokenValidation();
-                if (res?.data?.success) {
-                    dispatch(setUser(res.data.user));
-                } else {
-                    dispatch(logout());
-                }
-            } catch (error) {
-                dispatch(logout());
-            } finally {
-                setIsValidating(false);
-            }
-        };
+        dispatch(loginSuccess());
+        dispatch(setDoctorState(tokenRes.data.user));
 
-        validateToken();
-    }, [dispatch]);
+        //  Fetch user profile
+        const profileRes = await getDoctorProfile();
+         
+        dispatch(setDoctor(profileRes.data));
+        
+       
+      } catch (err) {
+        
+        dispatch(logout());
+        dispatch(clearDoctor());
+      } finally {
+        setIsValidating(false);
+      }
+    };
 
-     if (showSplash) {
+    validateAuth();
+  }, [dispatch]);
+
+  /* ---------------- SPLASH SCREEN ---------------- */
+  if (showSplash) {
     return (
-      <MedPulseSplash 
-        // Tell splash to finish progress bar when validation is done
-        finishLoading={!isValidating} 
-        // When progress bar hits 100%, hide the splash
-        onAnimationComplete={() => setShowSplash(false)} 
+      <MedPulseSplash
+        finishLoading={!isValidating}
+        onAnimationComplete={() => setShowSplash(false)}
       />
     );
   }
 
-    if (!isAuthenticated) {
-        return <Navigate to={"/"} replace />;
-    }
+  /* ---------------- AUTH CHECK ---------------- */
+  if (!isAuthenticated) {
+    return <Navigate to="/" replace />;
+  }
 
-    if (user && user.role === "patient") {
-        return <Navigate to={"/me"} replace />;
-    }
-    if (user && user.role === "admin") {
-        return <Navigate to={"/admin"} replace />;
-    }
-
-    if (user && user.role === "doctor") {
+  /* ---------------- ROLE ROUTING ---------------- */
+ 
+  switch (user?.role) {
+    case "doctor":
         return <Outlet />;
-    }
-
-    // Fallback for any other unhandled cases (e.g., user exists but role is neither patient nor doctor)
-    // This might indicate an issue or an unverified user, so redirect to login.
-    return <Navigate to={"/"} replace />;
+    case "admin":
+      return <Navigate to="/admin" replace />;
+    case "patient":
+       return <Navigate to="/me" replace />;
+    default:
+      return <Navigate to="/" replace />;
+  }
 };
 
- export default DoctorRoute;
+export default ProtectedRoute;

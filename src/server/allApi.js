@@ -12,38 +12,32 @@ export const userLogin = async (reqBody) => {
 export const userGoogleLogin = async (reqBody) => {
   return await CommonApi("POST", `${SERVER_URL}/auth/googleLogin`, reqBody);
 };
-export const tokenValidation =async()=>{
+export const tokenValidation = async () => {
   return await CommonApi("GET", `${SERVER_URL}/auth/validate-token`);
-
-}
+};
 
 // user api
 
-export const updateProfile =async(reqBody)=>{
-  return await CommonApi("POST", `${SERVER_URL}/user/update-profile`,reqBody);
-
-}
-export const getUserProfile =async()=>{
+export const updateProfile = async (reqBody) => {
+  return await CommonApi("POST", `${SERVER_URL}/user/update-profile`, reqBody);
+};
+export const getUserProfile = async () => {
   return await CommonApi("GET", `${SERVER_URL}/user/get-profile`);
-
-
-}
+};
 
 // post api
 
-export const userPost =async(reqBody)=>{
-  return await CommonApi("POST", `${SERVER_URL}/posts/user-post`,reqBody);
+export const userPost = async (reqBody) => {
+  return await CommonApi("POST", `${SERVER_URL}/posts/user-post`, reqBody);
+};
+export const getPost = async () => {
+  return await CommonApi("GET", `${SERVER_URL}/posts/get-post`);
+};
 
-}
-export const getPost=async()=>{
-return await CommonApi("GET",`${SERVER_URL}/posts/get-post`)
-}
+export const likePostApi = async (reqBody) => {
+  return await CommonApi("POST", `${SERVER_URL}/posts/like-unlike`, reqBody);
+};
 
-export const likePostApi=async(reqBody)=>{
-  return await CommonApi("POST",`${SERVER_URL}/posts/like-unlike`,reqBody);
-
-}
- 
 export const createComment = async (postId, reqBody) => {
   return await CommonApi(
     "POST",
@@ -53,9 +47,20 @@ export const createComment = async (postId, reqBody) => {
 };
 
 export const getCommentsByPost = async (postId) => {
-  return await CommonApi(
-    "POST",
-    `${SERVER_URL}/posts/${postId}/get-comments`
-    
-  );
+  return await CommonApi("POST", `${SERVER_URL}/posts/${postId}/get-comments`);
 };
+
+
+// Doctor Related Api
+
+export const PostUserDetails = async (reqBody) => {
+  return await CommonApi("POST", `${SERVER_URL}/doctor/profile`, reqBody);
+};
+
+export const getDoctorProfile = async () => {
+  return await CommonApi("GET",`${SERVER_URL}/doctor/get-profile`);
+};
+
+export const checkDoctorStatus= async()=>{
+  return await CommonApi("GET",`${SERVER_URL}/doctor/doctor-status`)
+}

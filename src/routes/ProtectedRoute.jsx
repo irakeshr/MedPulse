@@ -11,6 +11,7 @@ const ProtectedRoute = () => {
   const dispatch = useDispatch();
   const { isAuthenticated } = useSelector((state) => state.auth);
   const { profile: user } = useSelector((state) => state.userDetail);
+  console.log(user)
 
   const [isValidating, setIsValidating] = useState(true);
   const [showSplash, setShowSplash] = useState(true);
@@ -42,11 +43,13 @@ const ProtectedRoute = () => {
         const profileRes = await getUserProfile();
         const Post = await getPost();
         console.log(Post)
+
          
         dispatch(setPosts(Post.data.modifiedPosts));
        
         
         dispatch(setUser(profileRes.data));
+        
        
       } catch (err) {
         

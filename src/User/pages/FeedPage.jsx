@@ -5,7 +5,7 @@ import DoctorModal from "../components/DoctorModal";
 import { useState } from "react";
 import { useSelector,useDispatch } from "react-redux";
 import CreatePostForm from "../components/CreatePostForm";
-import { getPost } from "../../server/allApi";
+import { getDoctorProfile, getPost } from "../../server/allApi";
 import { userPost } from "../../server/allApi";
 import { ToastContainer ,toast } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
@@ -112,6 +112,8 @@ const dispatch =useDispatch();
 useEffect(() => {
   const fetchPosts = async () => {
     try {
+           
+         
       const Post = await getPost();
       dispatch(setPosts(Post.data.modifiedPosts));
     } catch (error) {

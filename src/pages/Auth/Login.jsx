@@ -14,6 +14,8 @@ const Login = ({ setRegisterPage }) => {
     password: "",
   });
 
+    
+
   const handleChange = async (e) => {
     const { name, value } = e.target;
     setLoginDetails((prev) => {

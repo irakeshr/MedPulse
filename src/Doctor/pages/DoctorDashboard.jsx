@@ -1,6 +1,12 @@
 import React from 'react';
 import DoctorPostCard from '../components/DoctorPostCard'; // Importing the separate component
-
+import { useState,useEffect } from 'react';
+import { useSelector } from 'react-redux';
+import { checkDoctorStatus } from '../../server/allApi';
+import { useDispatch } from 'react-redux';
+import { checkVerification } from '../../redux/doctorSlicer';
+import CustomToast from '../../components/CustomToast';
+import { toast } from 'react-toastify';
 // --- MOCK DATA ---
 const STATS = [
   { 
@@ -83,6 +89,46 @@ const DISCUSSIONS = [
 ];
 
 export default function DoctorDashboard() {
+  const {verified} =useSelector((state)=>state.doctor)
+  console.log("verified=>>>>>>>>>>>>",verified)
+  const dispatch = useDispatch()
+
+  const  {profile} =  useSelector((state)=>state.doctor) 
+  console.log(profile.DoctorProfile.displayName)//=>>>>>>>>>>..use checking here....!
+
+    useEffect(() => {
+    
+    const checkStatus=async()=>{
+
+      try{
+        const respond =await checkDoctorStatus();
+        if(respond.status==200){
+          dispatch(checkVerification(respond.data));
+           toast(
+          <CustomToast 
+            title="Verification Status"
+            message={respond?.data?.message}
+            type="success"
+          />
+        );
+        }
+
+      }catch(error){
+        toast(
+          <CustomToast
+            title="Verification Failed"
+            message={error.response?.data?.message || "An unexpected error occurred while checking verification status."}
+            type="error"
+          />
+        );
+      }
+    }
+    checkStatus(); // Call the async function
+  }, [dispatch]); // Add dispatch to the dependency array
+
+ 
+ 
+
   return (
     <main className="flex-1 bg-white flex flex-col h-full overflow-hidden relative bg-[#F2F4F7] dark:bg-[#1a2c2c] ">
       
@@ -107,11 +153,11 @@ export default function DoctorDashboard() {
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
             <div>
               <h1 className="text-[#111818] dark:text-white text-3xl md:text-4xl font-black tracking-tight mb-2">
-                Welcome back, Dr. Radhakrishnan
+                {verified?.isVerified ? `Welcome Dr. ${profile.DoctorProfile.displayName}` :"Welcome To MedPulse Doctor!"}
               </h1>
-              <p className="text-secondary dark:text-gray-400 text-base md:text-lg">
+              {/* <p className="text-secondary dark:text-gray-400 text-base md:text-lg">
                 You have <span className="font-semibold text-primary-dark dark:text-primary">3 urgent cases</span> requiring attention today.
-              </p>
+              </p> */}
             </div>
             <div className="flex gap-3">
               <button className="flex items-center gap-2 px-4 py-2.5 bg-white border border-[#dbe6e6] rounded-xl text-sm font-medium shadow-sm hover:bg-gray-50 dark:bg-[#1f3333] dark:border-[#2a3c3c] dark:text-white dark:hover:bg-[#253d3d] transition-all">
@@ -123,41 +169,50 @@ export default function DoctorDashboard() {
           </div>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {STATS.map((stat) => (
-              <div 
-                key={stat.id}
-                className={`bg-surface-light dark:bg-surface-dark p-5 rounded-2xl shadow-card border flex flex-col gap-3 group transition-colors relative overflow-hidden
-                  ${stat.isUrgent 
-                    ? "border-primary/30 dark:border-primary/30" 
-                    : "border-[#dbe6e6] dark:border-[#2a3c3c] hover:border-primary/50"
-                  }`}
-              >
-                {stat.isUrgent && (
-                  <div className="absolute top-0 right-0 p-2 opacity-10">
-                    <span className="material-symbols-outlined text-8xl text-primary">warning</span>
-                  </div>
-                )}
-                
-                <div className="flex justify-between items-start relative z-10">
-                  <div className={`p-2 rounded-lg ${stat.isUrgent ? "bg-primary/10 text-primary-dark dark:text-primary" : "bg-[#f0f4f4] text-[#111818] dark:bg-[#1f3333] dark:text-white group-hover:bg-primary/20 group-hover:text-primary-dark"} transition-colors`}>
-                    <span className="material-symbols-outlined" style={stat.isUrgent ? { fontVariationSettings: "'FILL' 1" } : {}}>
-                      {stat.icon}
-                    </span>
-                  </div>
-                  {stat.trend && (
-                    <span className={`flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-full ${stat.trendColor}`}>
-                      {stat.trend}
-                    </span>
-                  )}
-                </div>
-                <div className="relative z-10">
-                  <p className="text-3xl font-bold text-[#111818] dark:text-white">{stat.value}</p>
-                  <p className="text-sm font-medium text-secondary dark:text-gray-400">{stat.label}</p>
-                </div>
-              </div>
-            ))}
+         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+  {STATS.map((stat) => {
+    
+    const isVerified = verified?.isVerified;
+    
+    const displayValue = isVerified ? stat.value : (stat.id === 4 ? "N/A" : "0"); // ID 4 is "Avg Response Time", so N/A fits better
+    const displayTrend = isVerified ? stat.trend : null;
+    const isUrgent = isVerified ? stat.isUrgent : false; // Disable urgent alerts if not verified
+
+    return (
+      <div 
+        key={stat.id}
+        className={`bg-surface-light dark:bg-surface-dark p-5 rounded-2xl shadow-card border flex flex-col gap-3 group transition-colors relative overflow-hidden
+          ${isUrgent 
+            ? "border-primary/30 dark:border-primary/30" 
+            : "border-[#dbe6e6] dark:border-[#2a3c3c] hover:border-primary/50"
+          }`}
+      >
+        {isUrgent && (
+          <div className="absolute top-0 right-0 p-2 opacity-10">
+            <span className="material-symbols-outlined text-8xl text-primary">warning</span>
           </div>
+        )}
+        
+        <div className="flex justify-between items-start relative z-10">
+          <div className={`p-2 rounded-lg ${isUrgent ? "bg-primary/10 text-primary-dark dark:text-primary" : "bg-[#f0f4f4] text-[#111818] dark:bg-[#1f3333] dark:text-white group-hover:bg-primary/20 group-hover:text-primary-dark"} transition-colors`}>
+            <span className="material-symbols-outlined" style={isUrgent ? { fontVariationSettings: "'FILL' 1" } : {}}>
+              {stat.icon}
+            </span>
+          </div>
+          {displayTrend && (
+            <span className={`flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-full ${stat.trendColor}`}>
+              {displayTrend}
+            </span>
+          )}
+        </div>
+        <div className="relative z-10">
+          <p className="text-3xl font-bold text-[#111818] dark:text-white">{displayValue}</p>
+          <p className="text-sm font-medium text-secondary dark:text-gray-400">{stat.label}</p>
+        </div>
+      </div>
+    );
+  })}
+</div>
 
           {/* Search and Filters */}
           <div className="flex flex-col lg:flex-row gap-4 lg:items-center justify-between bg-surface-light dark:bg-surface-dark p-2 rounded-2xl border border-[#dbe6e6] dark:border-[#2a3c3c] shadow-sm">
@@ -165,7 +220,7 @@ export default function DoctorDashboard() {
               <label className="flex w-full items-center h-12 rounded-xl bg-[#f6f8f8] dark:bg-[#152626] px-4 focus-within:ring-2 focus-within:ring-primary/50 transition-shadow">
                 <span className="material-symbols-outlined text-secondary dark:text-gray-500 mr-3">search</span>
                 <input 
-                  className="w-full bg-transparent border-none text-sm text-[#111818] dark:text-white placeholder:text-secondary dark:placeholder:text-gray-500 focus:ring-0 p-0 font-medium" 
+                  className="w-full bg-transparent border-none outline-none text-sm text-[#111818] dark:text-white placeholder:text-secondary dark:placeholder:text-gray-500 focus:ring-0 p-0 font-medium" 
                   placeholder="Search by symptom, patient ID, or keywords..." 
                   type="text"
                 />
@@ -187,25 +242,129 @@ export default function DoctorDashboard() {
           </div>
 
           {/* Main Content Grid */}
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-            
-            {/* Case Feed (Left 2 Columns) */}
-            <div className="xl:col-span-2 flex flex-col gap-6">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-bold text-[#111818] dark:text-white">Needs Review</h3>
-                <button className="text-primary text-sm font-bold hover:underline">View All</button>
-              </div>
-              
-              {/* --- MAPPING THE DOCTOR POST CARD --- */}
-              {CASES.map((item) => (
-                <DoctorPostCard key={item.id} data={item} />
-              ))}
 
-            </div>
+{/* 1. IF VERIFIED: Show the Dashboard Content */}
+{verified?.isVerified ? (
+  <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+    {/* Case Feed (Left 2 Columns) */}
+    <div className="xl:col-span-2 flex flex-col gap-6">
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-bold text-[#111818] dark:text-white">Needs Review</h3>
+        <button className="text-primary text-sm font-bold hover:underline">View All</button>
+      </div>
 
-             
+      {/* --- MAPPING THE DOCTOR POST CARD --- */}
+      {CASES.map((item) => (
+        <DoctorPostCard key={item.id} data={item} />
+      ))}
+    </div>
+  </div>
+) : verified?.isProfileComplete ? (
+  /* 2. IF PROFILE COMPLETE BUT NOT VERIFIED: Show Pending Card */
+  <div className="w-full bg-white dark:bg-card-dark rounded-2xl shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] border border-gray-100 dark:border-gray-700 overflow-hidden mt-2 relative">
+    {/* Subtle decorative gradient */}
+    <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+
+    <div className="flex flex-col lg:flex-row">
+      {/* Left: Visual/Image */}
+      <div className="w-full lg:w-2/5 min-h-[300px] bg-gray-50 dark:bg-gray-800/50 flex items-center justify-center relative overflow-hidden group">
+        <div
+          className="absolute inset-0 bg-center bg-cover opacity-80 mix-blend-multiply"
+          data-alt="Abstract soft gradient with medical plus signs pattern"
+          style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuAUS0Wq3qC5KFqUppF-Di8bBxNMOfbGCuXttcYlhGpN3OTHtQ-ZljjAz0SIJ9-WVU04YBUv9C7WtpIYPqIsv7vKKnhWVQxZqEC_riKx77m3grtOCKxJUyZ8leRa8mUQ7agUQYbcGQWIM0MtJUdOZzrCKshARkFfFZEzzK8xCncsxAK31k2DEUc7p6rEqIdfGAVpL0ydDqITn_vGq03ZhjXwD9u9D-Gi9QlY4A5CRSXbBvjdXaBZSrTErUlr0QcvVUldXu6OL7ERdZc")' }}
+        ></div>
+        <div className="relative z-10 p-8 flex items-center justify-center">
+          <div className="bg-white/80 dark:bg-black/20 backdrop-blur-sm p-6 rounded-full shadow-lg">
+            <span className="material-symbols-outlined text-primary text-6xl">verified_user</span>
           </div>
+        </div>
+      </div>
 
+      {/* Right: Content */}
+      <div className="w-full lg:w-3/5 p-8 lg:p-12 flex flex-col justify-center">
+        <div className="flex items-center gap-3 mb-4">
+          <span className="px-3 py-1 rounded-full bg-yellow-50 text-yellow-700 dark:bg-yellow-900/30 dark:text-black text-xs font-bold uppercase tracking-wider border border-yellow-100 dark:border-yellow-800 flex items-center gap-1">
+            <span className="material-symbols-outlined text-[16px]">hourglass_empty</span>
+            Pending Review
+          </span>
+        </div>
+
+        <h3 className="text-2xl lg:text-3xl font-bold text-text-main dark:text-white mb-4 tracking-tight">
+          Verification in Progress
+        </h3>
+
+        <p className="text-text-muted text-lg leading-relaxed mb-8 max-w-2xl">
+          Your professional verification is currently being reviewed by our medical board. This typically takes 24-48 hours. We will notify you via email once you have full access to the platform.
+        </p>
+
+        <div className="flex flex-wrap items-center gap-4">
+          <button className="px-6 py-2.5 bg-primary hover:bg-primary-dark text-black font-semibold rounded-xl transition-colors shadow-sm shadow-primary/20 flex items-center gap-2">
+            <span className="material-symbols-outlined text-[20px]">edit</span>
+            Edit Profile
+          </button>
+          <button className="px-6 py-2.5 bg-white dark:bg-transparent border border-gray-200 dark:border-gray-700  text-black text-text-main dark:text-black hover:bg-gray-50 dark:hover:bg-gray-800 font-medium hover:text-white rounded-xl transition-colors flex items-center gap-2">
+            <span className="material-symbols-outlined text-[20px]">support_agent</span>
+            Contact Support
+          </button>
+        </div>
+
+        {/* Trust Signal */}
+        <div className="mt-8 pt-6 border-t border-gray-100 dark:border-gray-800 flex items-center gap-2 text-text-muted text-sm">
+          <span className="material-symbols-outlined text-[18px] text-green-600">lock</span>
+          <span>Your data is encrypted and securely stored.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+) : (
+  /* 3. IF INCOMPLETE (Default): Show Start Journey Card */
+  <div className="flex-1 bg-card-light dark:bg-card-dark rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm p-8 md:p-12 flex flex-col items-center justify-center text-center min-h-[400px]">
+    <div className="relative mb-6">
+      {/* Decorative background circle */}
+      <div className="absolute inset-0 bg-primary/20 blur-2xl rounded-full transform scale-150"></div>
+
+      {/* Icon/Image */}
+      <div className="relative bg-gradient-to-br from-white to-gray-50 dark:from-gray-700 dark:to-gray-800 p-6 rounded-3xl shadow-lg border border-gray-100 dark:border-gray-600">
+        <img
+          alt="Medical Verification"
+          className="w-24 h-24 object-cover rounded-xl opacity-90"
+          data-alt="Abstract medical stethoscope on a blue background representing healthcare verification"
+          src="https://lh3.googleusercontent.com/aida-public/AB6AXuAjkwLBVLa1AsS82tTcJv9p_HWYuPkJ3uQku1erZvbtEvbDZmmqctsWO7x-EpUtSreKRRHsYJGOT5MfWggBRplMuZhmgmqSxU5xjpY5tQXcGjN27PlBLwaAfKdTYIWl-XnPRb2xqRz3c0TyxQfAjlV2wfZCfER7VXZ0vdayznO8EgRoG_tdAn0kNSOdxhIXQG-o5YFfNBvlf9CPLc3z2KxUWTGvV2rxqRpbWzYCQfVphx2v2Vdl3UlMvjhmX-Qv5vIjfbGVH_5GnkU"
+        />
+      </div>
+
+      {/* Status Badge */}
+      <div className="absolute -bottom-2 -right-2 bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 text-xs font-bold px-3 py-1 rounded-full border border-white dark:border-gray-800 shadow-sm flex items-center gap-1">
+        <span className="material-symbols-outlined text-[14px]">pending</span>
+        Verification Pending
+      </div>
+    </div>
+
+    <h3 className="text-2xl font-bold text-text-main dark:text-white mb-3">
+      Start your journey with MedPulse
+    </h3>
+
+    <p className="text-text-muted dark:text-gray-400 max-w-lg mb-8 text-base leading-relaxed">
+      To ensure patient safety and maintain our community standards, we need to verify your medical license. This process typically takes 24-48 hours. Please complete your profile to unlock full access.
+    </p>
+
+    <div className="flex flex-col sm:flex-row gap-4 w-full justify-center">
+      <button className="bg-primary hover:bg-primary-hover text-text-main font-bold py-3 px-8 rounded-xl transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2">
+        <span className="material-symbols-outlined">verified_user</span>
+        Complete Profile
+      </button>
+      <button className="bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-text-main dark:text-white font-medium py-3 px-8 rounded-xl transition-all flex items-center justify-center gap-2">
+        <span className="material-symbols-outlined">help</span>
+        Learn More
+      </button>
+    </div>
+
+    <div className="mt-8 flex items-center gap-2 text-xs text-text-muted dark:text-gray-500">
+      <span className="material-symbols-outlined text-[16px]">lock</span>
+      <span>Your information is encrypted and securely stored.</span>
+    </div>
+  </div>
+)}      
         </div>
       </div>
     </main>

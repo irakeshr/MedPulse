@@ -182,7 +182,7 @@ try {
             <div className="flex items-center gap-2">
               <h3 className="font-bold text-med-dark dark:text-white text-sm">
                 {isOwnPost
-                  ? profile?.patientProfile?.displayName || "You"
+                  ? profile?.patientProfile?.displayName+"(You)" || "You"
                   : post.author?.username}
               </h3>
               <span className="text-xs text-med-text-secondary dark:text-gray-500">
