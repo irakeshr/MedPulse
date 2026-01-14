@@ -1,8 +1,9 @@
 import { Outlet } from "react-router-dom";
- import Header from "../../User/components/Header";
-import DoctorSidebar from "../components/DoctorSidebar";
+ import DoctorSidebar from "../components/DoctorSidebar";
 import { ToastContainer ,toast } from "react-toastify";
 import { useSelector } from "react-redux";
+import Header from "../components/DoctorHeader";
+import DoctorHeader from "../components/DoctorHeader";
 
 export default function DoctorLayout() {
 
@@ -29,7 +30,7 @@ export default function DoctorLayout() {
 />
       {/* 1. HEADER */}
       <div className="w-full h-[72px] shrink-0 bg-white border-b border-gray-200 z-50">
-        <Header />
+        <DoctorHeader />
       </div>
 
       {/* 2. CONTENT AREA */}
@@ -37,7 +38,7 @@ export default function DoctorLayout() {
         
         {/* LEFT SIDEBAR (Static) */}
         <div className="hidden lg:block w-64 h-full shrink-0 overflow-y-auto scrollbar-hide">
-          <DoctorSidebar />
+          <DoctorSidebar/>
         </div>
 
         {/* CENTER CONTENT (Dynamic) */}

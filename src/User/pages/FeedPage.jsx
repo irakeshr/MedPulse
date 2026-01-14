@@ -90,7 +90,7 @@ const dispatch =useDispatch();
  toast(
     <CustomToast 
       title={error.response.data.message} 
-      message="title,description,stream" 
+      message= {error.response.data.message} 
       type="error"
     />, 
     {

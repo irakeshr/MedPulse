@@ -64,3 +64,9 @@ export const getDoctorProfile = async () => {
 export const checkDoctorStatus= async()=>{
   return await CommonApi("GET",`${SERVER_URL}/doctor/doctor-status`)
 }
+export const getDoctorPosts= async()=>{
+  return await CommonApi("GET",`${SERVER_URL}/doctor/get-doctor-posts`)
+}
+export const doctorPostResponse= async()=>{
+  return await CommonApi("POST",`${SERVER_URL}/doctor/get-doctor-posts`)
+}

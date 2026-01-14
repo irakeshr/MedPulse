@@ -36,6 +36,9 @@ export default function DoctorSettings() {
     prevProfileImage: profileImage,
   });
 
+
+  console.log(profileImage);
+  
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {

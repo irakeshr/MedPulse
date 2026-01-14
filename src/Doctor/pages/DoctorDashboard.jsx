@@ -1,17 +1,17 @@
 import React from 'react';
 import DoctorPostCard from '../components/DoctorPostCard'; // Importing the separate component
 import { useState,useEffect } from 'react';
-import { useSelector } from 'react-redux';
-import { checkDoctorStatus } from '../../server/allApi';
-import { useDispatch } from 'react-redux';
+ import CaseCard from '../components/CaseCard';
+import { checkDoctorStatus, getDoctorPosts } from '../../server/allApi';
+import { useDispatch ,useSelector} from 'react-redux';
 import { checkVerification } from '../../redux/doctorSlicer';
 import CustomToast from '../../components/CustomToast';
 import { toast } from 'react-toastify';
+import { setPosts } from '../../redux/postSlice';
 // --- MOCK DATA ---
 const STATS = [
   { 
     id: 1, 
-    value: "12", 
     label: "Pending Reviews", 
     icon: "pending_actions", 
     trend: "+2 today", 
@@ -20,7 +20,6 @@ const STATS = [
   },
   { 
     id: 2, 
-    value: "3", 
     label: "Cases Needing Action", 
     icon: "warning", 
     trend: "Urgent", 
@@ -29,7 +28,6 @@ const STATS = [
   },
   { 
     id: 3, 
-    value: "184", 
     label: "Helped Patients", 
     icon: "thumb_up", 
     trend: "Top 5%", 
@@ -38,7 +36,6 @@ const STATS = [
   },
   { 
     id: 4, 
-    value: "2h 15m", 
     label: "Avg. Response Time", 
     icon: "schedule", 
     trend: null, 
@@ -90,7 +87,9 @@ const DISCUSSIONS = [
 
 export default function DoctorDashboard() {
   const {verified} =useSelector((state)=>state.doctor)
-  console.log("verified=>>>>>>>>>>>>",verified)
+    const post = useSelector((state)=>state.post.posts)
+    console.log("===>",post)
+   
   const dispatch = useDispatch()
 
   const  {profile} =  useSelector((state)=>state.doctor) 
@@ -126,8 +125,24 @@ export default function DoctorDashboard() {
     checkStatus(); // Call the async function
   }, [dispatch]); // Add dispatch to the dependency array
 
+  //Get Post
  
+ useEffect(() => {
+   const fetchPosts = async () => {
+     try {
+             
+       const Post = await getDoctorPosts();
+       dispatch(setPosts(Post.data.posts));
+     } catch (error) {
+       
+       toast.error("Server not reachable. Try again later.");
+     }
+   };
  
+   fetchPosts();
+ }, [dispatch]);
+
+ console.log(post)
 
   return (
     <main className="flex-1 bg-white flex flex-col h-full overflow-hidden relative bg-[#F2F4F7] dark:bg-[#1a2c2c] ">
@@ -170,7 +185,7 @@ export default function DoctorDashboard() {
 
           {/* Stats Cards */}
          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-  {STATS.map((stat) => {
+  {STATS.map((stat ,index) => {
     
     const isVerified = verified?.isVerified;
     
@@ -180,7 +195,7 @@ export default function DoctorDashboard() {
 
     return (
       <div 
-        key={stat.id}
+        key={index}
         className={`bg-surface-light dark:bg-surface-dark p-5 rounded-2xl shadow-card border flex flex-col gap-3 group transition-colors relative overflow-hidden
           ${isUrgent 
             ? "border-primary/30 dark:border-primary/30" 
@@ -254,8 +269,8 @@ export default function DoctorDashboard() {
       </div>
 
       {/* --- MAPPING THE DOCTOR POST CARD --- */}
-      {CASES.map((item) => (
-        <DoctorPostCard key={item.id} data={item} />
+      {post.map((item,index) => (
+        <CaseCard key={index} post={item} />
       ))}
     </div>
   </div>
