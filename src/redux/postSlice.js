@@ -3,7 +3,8 @@ import { createSlice } from "@reduxjs/toolkit";
 const postSlicer = createSlice({
   name: "post",
   initialState: {
-    posts: []
+    posts: [],
+    searchKey:""
   },
   reducers: {
     setPosts: (state, action) => {
@@ -26,9 +27,12 @@ const postSlicer = createSlice({
     post.likedBy = post.likedBy.filter(id => id !== userId);
   }
   post.likesCount=post.likedBy.length;
+    },
+    setSearchKey:(state,action)=>{
+      state.searchKey=action.payload;
     }
   }
 });
 
-export const { setPosts, updateLike, addCommentId } = postSlicer.actions;
+export const { setPosts, updateLike, addCommentId, setSearchKey } = postSlicer.actions;
 export default postSlicer.reducer;

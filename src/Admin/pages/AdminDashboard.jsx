@@ -1,7 +1,27 @@
-import React from 'react';
- 
+import React, { useEffect } from 'react';
+import { useState } from 'react';
+import { getAllDoctorsProfile } from '../../server/allApi';
+
 
 export default function AdminDashboard() {
+
+  const [doctorProfile, setDoctorProfile] = useState([]);
+
+  useEffect(()=>{
+    const fetchDoctorProfile=async()=>{
+ try {
+        const respond = await getAllDoctorsProfile();
+        console.log(respond)
+ setDoctorProfile(respond.data.doctors); // Assuming the doctors array is in respond.data.doctors
+ } catch (error) {
+ console.error("Error fetching doctor profiles:", error);
+ }
+    };
+    fetchDoctorProfile();
+  },[])
+
+
+  
   return (
     <div className="bg-white dark:bg-background-dark text-med-dark dark:text-white font-display transition-colors duration-200 min-h-screen w-full flex flex-col">
  
@@ -112,18 +132,20 @@ export default function AdminDashboard() {
                   </thead>
                   <tbody className="divide-y divide-[#e5e7eb] dark:divide-[#2a3838]">
                     {/* Row 1 */}
-                    <tr className="hover:bg-med-gray/30 dark:hover:bg-[#253636]/50 transition-colors">
+                    {doctorProfile?.map((value,index)=>{
+                      return(
+ <tr key={index} className="hover:bg-med-gray/30 dark:hover:bg-[#253636]/50 transition-colors">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="bg-center bg-no-repeat bg-cover rounded-full size-8" style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuAdRB0fWy8d3kiKhg17-Cg5W8KXvVqNBLxLTlAYmeOw4hDvzBgIlkmPvtblsDqqj5YVFetFqH-Zk7wsFZzrQgj34CiNH8u5WSIQ55W_5ZKqmDBM2qvOea_VJxlq0mPYhN5WhZ64yxP6tNBfbkOwvluO2n_Bv19pC1CxJRCsZ9cFr4VC1Cg4EdjlkWJstHVPGSiQYtACglNF5Eh0IFa6ek9vQ70Pb34T_HEh4NbUm4UVC7ZLjejoWWj9C2a0DThGITI-qIzp__BqN0E")' }}></div>
+                          <div className="bg-center bg-no-repeat bg-cover rounded-full size-8" style={{ backgroundImage:`url("${value.profileImage}")`}}></div>
                           <div>
-                            <div className="font-semibold text-med-dark dark:text-white">Dr. Sarah Lee</div>
-                            <div className="text-xs text-med-text-secondary">sarah.lee@example.com</div>
+                            <div className="font-semibold text-med-dark dark:text-white">{value.fullName}</div>
+                            <div className="text-xs text-med-text-secondary"> {value.user.email}</div>
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-med-dark dark:text-gray-300">Dermatologist</td>
-                      <td className="px-6 py-4 font-mono text-xs text-med-text-secondary">NY-44821-MD</td>
+                      <td className="px-6 py-4 text-med-dark dark:text-gray-300">{value.specialization}</td>
+                      <td className="px-6 py-4 font-mono text-xs text-med-text-secondary">{value.licenseNumber}</td>
                       <td className="px-6 py-4 text-med-text-secondary">2 hours ago</td>
                       <td className="px-6 py-4">
                         <div className="flex items-center justify-end gap-2">
@@ -133,71 +155,11 @@ export default function AdminDashboard() {
                         </div>
                       </td>
                     </tr>
+                      )
+                    })}
+                   
                     {/* Row 2 */}
-                    <tr className="hover:bg-med-gray/30 dark:hover:bg-[#253636]/50 transition-colors">
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="bg-center bg-no-repeat bg-cover rounded-full size-8" style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuBWka30KoK367JQLZVMGdVbRloQfwH54LWzQpR8XuUISpovvc4TGsUdWkqMNdlPcyXzkSRDksS1QZnoqTwchBrE3N4k4x4JWlsBEW9ALwqmVe1RzD7PuHa-0nFDQNLjONwtnit_rvvo8vd8xYPDX2jJfm7UpXkHdLjjwZi0Zqqyt5nDCq76QETXKZ61uD-5WlZZAEzemKC4YwrYlf9CjpjxskyMfmhJ8W1I4bApEl04XkOXpFYIHWxz15F8__4KBdlm8msNwiWdvZc")' }}></div>
-                          <div>
-                            <div className="font-semibold text-med-dark dark:text-white">Dr. A. Patel</div>
-                            <div className="text-xs text-med-text-secondary">a.patel@example.com</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-med-dark dark:text-gray-300">Cardiologist</td>
-                      <td className="px-6 py-4 font-mono text-xs text-med-text-secondary">CA-99210-MD</td>
-                      <td className="px-6 py-4 text-med-text-secondary">5 hours ago</td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center justify-end gap-2">
-                          <button className="p-1.5 rounded-lg text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20" title="Approve"><span className="material-symbols-outlined text-[20px]">check_circle</span></button>
-                          <button className="p-1.5 rounded-lg text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20" title="Reject"><span className="material-symbols-outlined text-[20px]">cancel</span></button>
-                          <button className="p-1.5 rounded-lg text-med-text-secondary hover:bg-gray-100 dark:hover:bg-gray-800" title="View Details"><span className="material-symbols-outlined text-[20px]">visibility</span></button>
-                        </div>
-                      </td>
-                    </tr>
-                    {/* Row 3 */}
-                    <tr className="hover:bg-med-gray/30 dark:hover:bg-[#253636]/50 transition-colors">
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="bg-center bg-no-repeat bg-cover rounded-full size-8 bg-gray-200 flex items-center justify-center text-gray-500 font-bold">JD</div>
-                          <div>
-                            <div className="font-semibold text-med-dark dark:text-white">Dr. John Doe</div>
-                            <div className="text-xs text-med-text-secondary">j.doe@example.com</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-med-dark dark:text-gray-300">General Practice</td>
-                      <td className="px-6 py-4 font-mono text-xs text-med-text-secondary">TX-11029-GP</td>
-                      <td className="px-6 py-4 text-med-text-secondary">1 day ago</td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center justify-end gap-2">
-                          <button className="p-1.5 rounded-lg text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20" title="Approve"><span className="material-symbols-outlined text-[20px]">check_circle</span></button>
-                          <button className="p-1.5 rounded-lg text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20" title="Reject"><span className="material-symbols-outlined text-[20px]">cancel</span></button>
-                          <button className="p-1.5 rounded-lg text-med-text-secondary hover:bg-gray-100 dark:hover:bg-gray-800" title="View Details"><span className="material-symbols-outlined text-[20px]">visibility</span></button>
-                        </div>
-                      </td>
-                    </tr>
-                        <tr className="hover:bg-med-gray/30 dark:hover:bg-[#253636]/50 transition-colors">
-                        <td className="px-6 py-4">
-                            <div className="flex items-center gap-3">
-                            <div className="bg-center bg-no-repeat bg-cover rounded-full size-8 bg-gray-200 flex items-center justify-center text-gray-500 font-bold">JD</div>
-                            <div>
-                                <div className="font-semibold text-med-dark dark:text-white">Dr. John Doe</div>
-                                <div className="text-xs text-med-text-secondary">j.doe@example.com</div>
-                            </div>
-                            </div>
-                        </td>
-                        <td className="px-6 py-4 text-med-dark dark:text-gray-300">General Practice</td>
-                        <td className="px-6 py-4 font-mono text-xs text-med-text-secondary">TX-11029-GP</td>
-                        <td className="px-6 py-4 text-med-text-secondary">1 day ago</td>
-                        <td className="px-6 py-4">
-                            <div className="flex items-center justify-end gap-2">
-                            <button className="p-1.5 rounded-lg text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20" title="Approve"><span className="material-symbols-outlined text-[20px]">check_circle</span></button>
-                            <button className="p-1.5 rounded-lg text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20" title="Reject"><span className="material-symbols-outlined text-[20px]">cancel</span></button>
-                            <button className="p-1.5 rounded-lg text-med-text-secondary hover:bg-gray-100 dark:hover:bg-gray-800" title="View Details"><span className="material-symbols-outlined text-[20px]">visibility</span></button>
-                            </div>
-                        </td>
-                        </tr>
+                   
                   </tbody>
                 </table>
               </div>

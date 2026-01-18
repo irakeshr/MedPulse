@@ -17,6 +17,7 @@ const MEDICAL_STREAMS = [
 const CreatePostForm = ({ onSubmit, userAvatar }) => {
   const navigate = useNavigate();
   const { profile } = useSelector((state) => state.userDetail);
+  
 
   const {
     allergies,
@@ -26,6 +27,7 @@ const CreatePostForm = ({ onSubmit, userAvatar }) => {
     dateOfBirth,
     healthTags,
     location,
+    profileImage
   } = profile.patientProfile;
   const isProfileComplete = Boolean(
     allergies &&
@@ -171,10 +173,7 @@ const CreatePostForm = ({ onSubmit, userAvatar }) => {
             style={{
               backgroundImage: isAnonymous
                 ? 'url("https://cdn-icons-png.flaticon.com/512/149/149071.png")'
-                : `url("${
-                    userAvatar ||
-                    "https://lh3.googleusercontent.com/aida-public/AB6AXuCUyJhcQQkJaNYmDJASe4NALB-H2j15Rr9tCtmyExU4rO5Mw0OXnGKvXlk96HvSgY5I4kFdtsWoQ4r1A5ldq_9NCygmj7kHhapBYTk36dVNvokLY5gxlB3CDAtQpp971jx9K3ihMYcnFS8vkUCH2LsRV6ejDsHJvniI__RZTHjMuc6-QIXDHfzvI07lP31ti8PrcoRWnjkvjZRsmPQGVgxHJOzYn8eJ_jmFjCGmX2rZ91ODUL8i9xfzLUXkEfalwNXtymDLjZUEkWI"
-                  }")`,
+                : `url("${profileImage}")`,
             }}
           ></div>
 

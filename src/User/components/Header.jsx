@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { useSelector } from "react-redux";
+import { useSelector,useDispatch } from "react-redux";
 import { Link } from "react-router-dom";
+import { setSearchKey } from "../../redux/postSlice";
 
 export default function Header() {
   const {profile}=useSelector((state)=>state.userDetail)
   const profileImage=profile?.patientProfile?.profileImage;
+  const dispatch = useDispatch();
  
   // --- STATE ---
   // Mock Auth State (Replace with your auth context later)
@@ -35,6 +37,11 @@ export default function Header() {
       setIsDarkMode(true);
     }
   };
+const { searchKey } = useSelector((state) => state.post);
+
+useEffect(() => {
+  console.log("Current Search Key:", searchKey);
+}, [searchKey]);  
 
   return (
     <header className="sticky top-0 z-50 flex items-center justify-between whitespace-nowrap border-b border-solid border-[#e5e7eb] dark:border-[#2a3838] bg-white dark:bg-[#1a2c2c] px-4 lg:px-8 py-4 shadow-sm transition-colors duration-200">
@@ -59,11 +66,13 @@ export default function Header() {
               <span className="material-symbols-outlined text-med-text-secondary dark:text-gray-400 text-[20px]">
                 search
               </span>
-              <input
-                className="w-full bg-transparent border-none focus:ring-0 text-sm ml-2 placeholder:text-med-text-secondary dark:placeholder:text-gray-500 text-med-dark dark:text-white h-full outline-none"
-                placeholder="Search symptoms, doctors, or topics..."
-                type="text"
-              />
+             <input
+  className="w-full bg-transparent border-none focus:ring-0 text-sm ml-2 placeholder:text-med-text-secondary dark:placeholder:text-gray-500 text-med-dark dark:text-white h-full outline-none"
+  placeholder="Search symptoms, doctors, or topics..."
+  type="text"
+  value={searchKey || ""}  // <--- ADD THIS LINE
+  onChange={(e) => dispatch(setSearchKey(e.target.value))}
+/>
             </div>
           </label>
         </div>

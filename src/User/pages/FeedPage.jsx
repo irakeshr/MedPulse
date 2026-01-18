@@ -33,6 +33,7 @@ const FeedPage = () => {
 const dispatch =useDispatch();
   const [selectedDoctor, setSelectedDoctor] = useState(null);
   const post = useSelector((state)=>state.post.posts)
+  const searchKey = useSelector((state)=>state.post.searchKey)
   console.log(post)
   const { profile, stats } = useSelector((state) => state.userDetail)
   const [posted,setPosted]=useState(true);
@@ -114,7 +115,7 @@ useEffect(() => {
     try {
            
          
-      const Post = await getPost();
+      const Post = await getPost(searchKey);
       dispatch(setPosts(Post.data.modifiedPosts));
     } catch (error) {
       
@@ -123,7 +124,7 @@ useEffect(() => {
   };
 
   fetchPosts();
-}, [posted, dispatch]);
+}, [posted, dispatch,searchKey]);
 
   return (
     // MAIN LAYOUT CONTAINER

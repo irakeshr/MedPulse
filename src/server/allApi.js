@@ -30,8 +30,8 @@ export const getUserProfile = async () => {
 export const userPost = async (reqBody) => {
   return await CommonApi("POST", `${SERVER_URL}/posts/user-post`, reqBody);
 };
-export const getPost = async () => {
-  return await CommonApi("GET", `${SERVER_URL}/posts/get-post`);
+export const getPost = async (searchKey) => {
+  return await CommonApi("GET", `${SERVER_URL}/posts/get-post?search=${searchKey}`);
 };
 
 export const likePostApi = async (reqBody) => {
@@ -69,4 +69,10 @@ export const getDoctorPosts= async()=>{
 }
 export const doctorPostResponse= async()=>{
   return await CommonApi("POST",`${SERVER_URL}/doctor/get-doctor-posts`)
+}
+
+// Admin ApiCalls
+
+export const getAllDoctorsProfile=async()=>{
+  return await CommonApi ("GET",`${SERVER_URL}/admin/get-all-doctor-profile`)
 }

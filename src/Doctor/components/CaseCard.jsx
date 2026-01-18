@@ -23,7 +23,6 @@ const CaseCard = ({ post }) => {
   const comments = useSelector(
     (state) => state.comment.byPostId?.[post._id] || []
   );
-console.log(comments)
   // --- HANDLERS ---
 
   useEffect(()=>{

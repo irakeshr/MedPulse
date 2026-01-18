@@ -43,6 +43,10 @@ const Login = ({ setRegisterPage }) => {
           setTimeout(() => {
             navigate("/me");
           }, 1500);
+        } else if (res.data.role == "admin") {
+          setTimeout(() => {
+            navigate("/admin");
+          }, 1500);
         } else {
           toast.error("Unknown role. Please contact support.");
         }
