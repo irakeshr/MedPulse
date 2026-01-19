@@ -76,3 +76,10 @@ export const doctorPostResponse= async()=>{
 export const getAllDoctorsProfile=async()=>{
   return await CommonApi ("GET",`${SERVER_URL}/admin/get-all-doctor-profile`)
 }
+export const getAllUsers=async()=>{
+ return await CommonApi("GET",`${SERVER_URL}/admin/get-all-users-profile`)
+}
+
+export const userApprove=async(userId, reqBody)=>{
+  return await CommonApi("PUT",`${SERVER_URL}/admin/${userId}/user-approve`,reqBody)
+}
