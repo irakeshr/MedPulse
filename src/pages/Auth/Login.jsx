@@ -1,10 +1,13 @@
 import React, { useState } from "react";
 import { ToastContainer, toast } from "react-toastify";
-import { userLogin, userRegister } from "../../server/allApi";
+import { userGoogleLogin, userLogin, userRegister } from "../../server/allApi";
 import "react-toastify/dist/ReactToastify.css";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { loginSuccess, setUser } from "../../redux/authSlice";
+import { GoogleLogin } from "@react-oauth/google";
+import { jwtDecode } from "jwt-decode";
+import CustomToast from "../../components/CustomToast";
 
 const Login = ({ setRegisterPage }) => {
   const dispatch = useDispatch();
@@ -14,7 +17,59 @@ const Login = ({ setRegisterPage }) => {
     password: "",
   });
 
-    
+  // Google Auth
+
+  const handleSuccess = async (credentialRespond) => {
+    try {
+      const decoded = jwtDecode(credentialRespond.credential);
+      const userData = {
+        name: decoded.name,
+        email: decoded.email,
+        picture: decoded.picture,
+        googleId: decoded.sub,
+      };
+
+      const respond = await userGoogleLogin(userData);
+      if (respond.status === 200) {
+        localStorage.setItem("token", respond.data.token);
+        dispatch(loginSuccess());
+        console.log("Google Login==>", respond);
+        const email = userData.email;
+
+        if (respond.data.isFirstLogin) {
+          navigate(`/role-selection/${email}`);
+        } else {
+          const role = respond.data.role;
+          if (role === "doctor") {
+            setTimeout(() => {
+            navigate("/doctor/dashboard");
+          }, 1500);
+          } else if (role === "patient") {
+            navigate("/me");
+          } else if (role === "admin") {
+            navigate("/admin");
+          }
+        }
+      }
+    } catch (error) {
+      toast(
+        <CustomToast
+          title="Failed Role"
+          message={
+            error.message ||
+            "Something went wrong during Google login."
+          }
+          type="error"
+        />,
+      );
+    }
+  };
+
+  const handleError = () => {
+    console.log("Login Failed");
+  };
+
+  // Google Auth End
 
   const handleChange = async (e) => {
     const { name, value } = e.target;
@@ -33,7 +88,19 @@ const Login = ({ setRegisterPage }) => {
       const res = await userLogin(loginDetails);
       if (res.status === 200) {
         localStorage.setItem("token", res.data.token);
-        toast.success("Login Success!!");
+               toast(
+    <CustomToast 
+      title="Login Successfully"
+      message= "Welcome back MedPulse, where health begin." 
+      type="success"
+    />, 
+    {
+      
+      position: "bottom-right", 
+      bodyClassName: "p-5 m-0",
+      closeButton: false  
+    }
+  );
         dispatch(loginSuccess());
         if (res.data.role == "doctor") {
           setTimeout(() => {
@@ -48,21 +115,55 @@ const Login = ({ setRegisterPage }) => {
             navigate("/admin");
           }, 1500);
         } else {
-          toast.error("Unknown role. Please contact support.");
+          toast(
+            <CustomToast
+              title="Unknown role."
+              message="Unknown role. Please contact support."
+              type="error"
+            />,
+            {
+              position: "bottom-right",
+              bodyClassName: "p-5 m-0",
+              closeButton: false,
+            },
+          );
         }
       } else {
-        toast.error("Registration failed. Please try again.");
+        toast(
+          <CustomToast
+            title="Registration failed."
+            message="Registration failed. Please try again."
+            type="error"
+          />,
+          {
+            position: "bottom-right",
+            bodyClassName: "p-5 m-0",
+            closeButton: false,
+          },
+        );
       }
     } catch (error) {
       const errorMessage =
-        error.response?.data?.message || "Something went wrong during login.";
-      toast.error(errorMessage);
+        error.message || "Something went wrong during login.";
+      toast(
+        <CustomToast
+          title="Login Failed"
+          message={errorMessage}
+          type="error"
+        />,
+        {
+          // Optional: specific overrides for just this toast
+          position: "bottom-right",
+
+          bodyClassName: "p-5 m-0",
+          closeButton: false, // We are using our own close button inside the component
+        },
+      );
     }
   };
 
   return (
     <div>
-      <ToastContainer position="top-center" autoClose={3000} />
       <div className="relative z-10 w-full max-w-[440px] bg-white dark:bg-[#1a2c2c] rounded-2xl shadow-xl border border-gray-100 dark:border-[#2a3838] overflow-hidden">
         <div className="pt-5 pb-2 px-8 flex flex-col items-center text-center">
           <div className="mb-6 bg-primary/10 p-3 rounded-full text-primary">
@@ -175,34 +276,41 @@ const Login = ({ setRegisterPage }) => {
             </span>
             <div className="flex-grow border-t border-gray-100 dark:border-gray-700"></div>
           </div>
-          <button
-            className="w-full bg-white dark:bg-[#253636] border border-gray-200 dark:border-[#2a3838] hover:bg-gray-50 dark:hover:bg-[#2a3838] text-med-dark dark:text-white font-medium text-sm py-3 rounded-xl transition-colors flex items-center justify-center gap-3 group"
-            type="button"
+          <GoogleLogin
+            onSuccess={handleSuccess}
+            onError={handleError}
+            useOneTap
           >
-            <svg
-              className="w-5 h-5"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
+            <button
+              className="w-full bg-white dark:bg-[#253636] border border-gray-200 dark:border-[#2a3838] hover:bg-gray-50 dark:hover:bg-[#2a3838] text-med-dark dark:text-white font-medium text-sm py-3 rounded-xl transition-colors flex items-center justify-center gap-3 group"
+              type="button"
             >
-              <path
-                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                fill="#4285F4"
-              />
-              <path
-                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                fill="#34A853"
-              />
-              <path
-                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                fill="#FBBC05"
-              />
-              <path
-                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                fill="#EA4335"
-              />
-            </svg>
-            <span>Continue with Google</span>
-          </button>
+              <svg
+                className="w-5 h-5"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                  fill="#4285F4"
+                />
+                <path
+                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                  fill="#34A853"
+                />
+                <path
+                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                  fill="#FBBC05"
+                />
+                <path
+                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                  fill="#EA4335"
+                />
+              </svg>
+              <span>Continue with Google</span>
+            </button>
+          </GoogleLogin>
+
           <p className="text-center text-sm text-med-text-secondary dark:text-gray-400 mt-2">
             Don't have an account yet?
             <a

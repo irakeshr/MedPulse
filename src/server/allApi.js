@@ -15,6 +15,9 @@ export const userGoogleLogin = async (reqBody) => {
 export const tokenValidation = async () => {
   return await CommonApi("GET", `${SERVER_URL}/auth/validate-token`);
 };
+export const setUserRole = async (reqBody) => {
+  return await CommonApi("POST", `${SERVER_URL}/auth/set-user-role` ,reqBody);
+};
 
 // user api
 
@@ -83,3 +86,7 @@ export const getAllUsers=async()=>{
 export const userApprove=async(userId, reqBody)=>{
   return await CommonApi("PUT",`${SERVER_URL}/admin/${userId}/user-approve`,reqBody)
 }
+export const DeleteUser=async(userId,reqBody)=>{
+  return await CommonApi("DELETE",`${SERVER_URL}/admin/${userId}/delete-user`,reqBody)
+}
+ 

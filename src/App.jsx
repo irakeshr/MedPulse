@@ -27,6 +27,7 @@ import AdminModeration from './Admin/pages/AdminModeration';
 import AdminTopics from './Admin/pages/AdminTopics';
 import AdminSettings from './Admin/pages/AdminSettings';
 import ProtectedAdmin from './routes/ProtectedAdmin';
+import RoleSelection from './components/RoleSelection';
 const App = () => {
   return (
     <div >
@@ -35,6 +36,7 @@ const App = () => {
 
       {/* PUBLIC ROUTE (Login + Register) */}
       <Route path="/" element={<HomePage />} />
+      <Route path="/role-selection/:emailID" element={<RoleSelection/>} />
 
       {/* PROTECTED USER ROUTES */}
       <Route element={<ProtectedRoute />}>

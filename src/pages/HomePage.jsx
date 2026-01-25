@@ -2,15 +2,31 @@ import React, { useState } from 'react';
 import Register from './Auth/Register';
 import Login from './Auth/Login';
 import Header from '../components/Header';
+import { ToastContainer } from 'react-toastify';
 
 const HomePage = () => {
 
     const [switchPage,setSwitchPage]=useState(false);
     return (
         <div>
+           <ToastContainer
+  position="bottom-right"
+  autoClose={3000}
+  hideProgressBar={true} // Hide default progress bar if you want clean look
+  newestOnTop={false}
+  closeOnClick={false} // Important: set false because we have a custom close button
+  rtl={false}
+  pauseOnFocusLoss
+  draggable
+  pauseOnHover
+  theme="light"
+  toastClassName={() => "relative flex p-0 min-h-10 rounded-md justify-between overflow-hidden cursor-pointer"}
+  bodyClassName={() => "flex text-sm font-white font-med block"}
+  style={{ width: "auto", background: "none", boxShadow: "none" }} 
+/>
             <div className="bg-background-light dark:bg-background-dark text-med-dark dark:text-white font-display overflow-x-hidden transition-colors duration-200 min-h-screen flex flex-col">
-  
-  <Header/>
+
+      <Header/>
   
   <main className="flex-1 flex flex-col lg:flex-row items-center justify-center px-4 sm:px-6 lg:px-12 py-8 lg:py-0 max-w-[1440px] mx-auto w-full gap-12 lg:gap-20">
     <div className="hidden lg:flex flex-col justify-center flex-1 max-w-xl">

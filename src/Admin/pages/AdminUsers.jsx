@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { getAllUsers, userApprove } from "../../server/allApi";
-import { formatDistanceToNow, isValid } from "date-fns";
+import { DeleteUser, getAllUsers, userApprove } from "../../server/allApi";
+import { formatDistanceToNow, isValid, differenceInMinutes } from "date-fns";
 import CountUp from "../../../reactBitAnimation/CountUp";
+import { toast } from "react-toastify";
+import CustomToast from "../../components/CustomToast";
 
 export default function AdminUsers() {
   const [allUsers, setAllUsers] = useState([]);
@@ -44,38 +46,73 @@ export default function AdminUsers() {
     }
   };
 
-  // get all users
-    const handleUserApprove = async(userId, status)=>{
-      
-        try{
-            const respond = await userApprove(userId, {status})
-            console.log(respond);
-             
-        }catch(error){
-          console.log(error)
-        }
-      }
-
-  useEffect(() => {
+  // START USER APPROVE
+  const handleUserApprove = async (userId, status) => {
     try {
-      (async () => {
-        const res = await getAllUsers();
+      const respond = await userApprove(userId, { status });
+       if(respond.status===200){
+        toast(
+        <CustomToast
+          title="Updated Status Successfully"
+          message={respond?.data?.message}
+          type="success"
+        />,
+      );
+       }
+       fetchUsers(); // Refresh the user list after approval
+    } catch (error) {
+       toast(
+        <CustomToast
+          title=" Status Update Failed"
+          message={error.response?.data?.message }
+          type="error"
+        />,
+      );
+    }
+  };
+  // Function to fetch all users
+  const fetchUsers = async () => {
+    try {
+      const res = await getAllUsers();
 
-        if (res.status === 200) {
-          setAllUsers(res.data.allUsers);
-          setUsersCount(res.data.usersCount);
-        }
-      })();
+      if (res.status === 200) {
+        setAllUsers(res.data.allUsers);
+        setUsersCount(res.data.usersCount);
+      }
     } catch (error) {
       console.log(error);
     }
-  }, [handleUserApprove]);
+  };
 
-  
+  useEffect(() => {
+    fetchUsers();
+  }, []); // Initial fetch on component mount
+
   //END GET USER
 
-  // START USER APPROVE
-  
+  // Delete user all data post,comment , ...etc
+
+  const handleDeleteUser = async (userId , username) => {
+    try {
+      const respond = await DeleteUser(userId,{username});
+      toast(
+        <CustomToast
+          title="Delete Completed"
+          message={respond?.data?.message}
+          type="success"
+        />,
+      );
+      fetchUsers(); // Refresh the user list after deletion
+    } catch (error) {
+      toast(
+        <CustomToast
+          title="failed Deletion"
+          message={error.response?.data?.message }
+          type="error"
+        />,
+      );
+    }
+  };
 
   return (
     <div className="bg-background-light dark:bg-background-dark text-med-dark dark:text-white font-display overflow-x-hidden transition-colors duration-200 min-h-screen flex flex-col">
@@ -290,17 +327,26 @@ export default function AdminUsers() {
                           : "N/A"}
                       </td>
                       <td className="px-6 py-4 text-med-dark dark:text-gray-300">
-                        {user.updatedAt && isValid(new Date(user.updatedAt))
-                          ? formatDistanceToNow(new Date(user.updatedAt), {
+                        {user.lastActive && isValid(new Date(user.lastActive)) ? (
+                          differenceInMinutes(new Date(), new Date(user.lastActive)) <= 5 ? (
+                            <span className="flex items-center gap-1">
+                              <span className="size-2 rounded-full bg-green-500 animate-pulse"></span>
+                              Online
+                            </span>
+                          ) : (
+                            formatDistanceToNow(new Date(user.lastActive), {
                               addSuffix: true,
                             })
-                          : "N/A"}
+                          )
+                        ) : (
+                          "N/A"
+                        )}
                       </td>
 
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-2">
                           {user.stats.approved === "pending" ? (
-                            <button 
+                            <button
                               className="p-1.5 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors"
                               title="Approve"
                             >
@@ -312,16 +358,19 @@ export default function AdminUsers() {
                             <button
                               className="p-1.5 text-med-text-secondary hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
                               title="undo suspend"
-                              onClick={()=>handleUserApprove(user._id,"active")}
+                              onClick={() =>
+                                handleUserApprove(user._id, "active")
+                              }
                             >
                               <span className="material-symbols-outlined text-[20px]">
-                              undo
+                                undo
                               </span>
                             </button>
-                          ):null}
+                          ) : null}
 
                           {user.stats.approved === "suspended" ? (
-                            <button 
+                            <button
+                            onClick={()=>handleDeleteUser(user._id,user.username)}
                               className="p-1.5 text-red-600 hover:text-red-700 bg-red-50 dark:bg-red-900/20 rounded-lg transition-colors"
                               title="Delete User"
                             >
@@ -333,7 +382,9 @@ export default function AdminUsers() {
                             <button
                               className="p-1.5 text-med-text-secondary hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                               title="Suspend User"
-                              onClick={()=>handleUserApprove(user._id,"suspended")}
+                              onClick={() =>
+                                handleUserApprove(user._id, "suspended")
+                              }
                             >
                               <span className="material-symbols-outlined text-[20px]">
                                 block
