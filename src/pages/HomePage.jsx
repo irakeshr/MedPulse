@@ -10,7 +10,7 @@ const HomePage = () => {
     return (
         <div>
            <ToastContainer
-  position="bottom-right"
+  position="top-center"
   autoClose={3000}
   hideProgressBar={true} // Hide default progress bar if you want clean look
   newestOnTop={false}

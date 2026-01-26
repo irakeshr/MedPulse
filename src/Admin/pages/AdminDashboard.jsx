@@ -114,7 +114,7 @@ export default function AdminDashboard() {
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 items-start">
             
             {/* Left Column: Doctor Table (Span 2) */}
-            <div className="xl:col-span-2 bg-white dark:bg-[#1a2c2c] rounded-2xl border border-[#e5e7eb] dark:border-[#2a3838] shadow-sm flex flex-col">
+            <div className="xl:col-span-2 mb-5 bg-white dark:bg-[#1a2c2c] rounded-2xl border border-[#e5e7eb] dark:border-[#2a3838] shadow-sm flex flex-col">
               <div className="p-5 border-b border-[#e5e7eb] dark:border-[#2a3838] flex justify-between items-center">
                 <h3 className="font-bold text-med-dark dark:text-white">Pending Doctor Verifications</h3>
                 <a className="text-xs font-bold text-primary hover:text-primary-dark uppercase tracking-wide" href="#">View All</a>
@@ -134,6 +134,7 @@ export default function AdminDashboard() {
                     {/* Row 1 */}
                     {doctorProfile?.map((value,index)=>{
                       return(
+                        value.licenseNumber !=="N/A"?(
  <tr key={index} className="hover:bg-med-gray/30 dark:hover:bg-[#253636]/50 transition-colors">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
@@ -155,6 +156,8 @@ export default function AdminDashboard() {
                         </div>
                       </td>
                     </tr>
+                        ):null
+
                       )
                     })}
                    

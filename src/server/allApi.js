@@ -79,10 +79,17 @@ export const doctorPostResponse= async()=>{
 export const getAllDoctorsProfile=async()=>{
   return await CommonApi ("GET",`${SERVER_URL}/admin/get-all-doctor-profile`)
 }
-export const getAllUsers=async()=>{
- return await CommonApi("GET",`${SERVER_URL}/admin/get-all-users-profile`)
-}
+export const getAllUsers = async (page = 1, limit = 15, SearchKey = "", filters = {}) => {
+  //  query parameters
+  const queryParams = new URLSearchParams({
+    page: page.toString(),
+    limit: limit.toString(),
+    ...(SearchKey && { search:SearchKey }),
+    ...filters // role, status, etc.
+  }).toString();
 
+  return await CommonApi("GET", `${SERVER_URL}/admin/get-all-users-profile?${queryParams}`);
+};
 export const userApprove=async(userId, reqBody)=>{
   return await CommonApi("PUT",`${SERVER_URL}/admin/${userId}/user-approve`,reqBody)
 }

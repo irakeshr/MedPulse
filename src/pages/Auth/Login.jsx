@@ -95,8 +95,6 @@ const Login = ({ setRegisterPage }) => {
       type="success"
     />, 
     {
-      
-      position: "bottom-right", 
       bodyClassName: "p-5 m-0",
       closeButton: false  
     }
@@ -122,7 +120,7 @@ const Login = ({ setRegisterPage }) => {
               type="error"
             />,
             {
-              position: "bottom-right",
+             
               bodyClassName: "p-5 m-0",
               closeButton: false,
             },
@@ -136,7 +134,7 @@ const Login = ({ setRegisterPage }) => {
             type="error"
           />,
           {
-            position: "bottom-right",
+           
             bodyClassName: "p-5 m-0",
             closeButton: false,
           },
@@ -153,8 +151,7 @@ const Login = ({ setRegisterPage }) => {
         />,
         {
           // Optional: specific overrides for just this toast
-          position: "bottom-right",
-
+     
           bodyClassName: "p-5 m-0",
           closeButton: false, // We are using our own close button inside the component
         },

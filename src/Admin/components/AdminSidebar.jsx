@@ -36,7 +36,7 @@ const AdminSidebar = () => {
             <span className={`material-symbols-outlined ${activeIcon("/admin/verify")}`}>verified_user</span>
             <span>Doctor Verification</span>
           </div>
-          <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">14</span>
+          {/* <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">14</span> */}
         </Link>
 
         <Link to="/admin/moderation" className={`flex items-center justify-between px-4 py-3 rounded-xl group ${active("/admin/moderation")}`}>
@@ -44,7 +44,7 @@ const AdminSidebar = () => {
             <span className={`material-symbols-outlined ${activeIcon("/admin/moderation")}`}>report_problem</span>
             <span>Moderation</span>
           </div>
-          <span className="bg-orange-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">23</span>
+          {/* <span className="bg-orange-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">23</span> */}
         </Link>
 
         <Link to="/admin/topics" className={`flex items-center gap-3 px-4 py-3 rounded-xl ${active("/admin/topics")}`}>

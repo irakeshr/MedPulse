@@ -1,4 +1,6 @@
 import React from 'react';
+import { useState,useEffect } from 'react';
+import { getAllDoctorsProfile } from '../../server/allApi';
 
 // --- MOCK DATA ---
 const STATS = [
@@ -6,115 +8,26 @@ const STATS = [
   { label: "Approved This Week", value: 42, icon: "verified", color: "green" },
   { label: "Rejected Requests", value: 5, icon: "block", color: "red" }
 ];
-
-const REQUESTS = [
-  {
-    id: "REQ-2948",
-    name: "Dr. Sarah Lee",
-    email: "sarah.lee@example.com",
-    role: "Dermatologist",
-    license: "NY-44821-MD",
-    exp: "12 Years",
-    docs: ["Medical License.pdf", "Photo ID.jpg"],
-    status: "Pending",
-    time: "2 hrs ago",
-    avatar: "https://lh3.googleusercontent.com/aida-public/AB6AXuAdRB0fWy8d3kiKhg17-Cg5W8KXvVqNBLxLTlAYmeOw4hDvzBgIlkmPvtblsDqqj5YVFetFqH-Zk7wsFZzrQgj34CiNH8u5WSIQ55W_5ZKqmDBM2qvOea_VJxlq0mPYhN5WhZ64yxP6tNBfbkOwvluO2n_Bv19pC1CxJRCsZ9cFr4VC1Cg4EdjlkWJstHVPGSiQYtACglNF5Eh0IFa6ek9vQ70Pb34T_HEh4NbUm4UVC7ZLjejoWWj9C2a0DThGITI-qIzp__BqN0E"
-  },
-  {
-    id: "REQ-2945",
-    name: "Dr. A. Patel",
-    email: "a.patel@example.com",
-    role: "Cardiologist",
-    license: "CA-99210-MD",
-    exp: "8 Years",
-    docs: ["Board Cert.pdf"],
-    status: "In Review",
-    time: "40m ago",
-    avatar: "https://lh3.googleusercontent.com/aida-public/AB6AXuBWka30KoK367JQLZVMGdVbRloQfwH54LWzQpR8XuUISpovvc4TGsUdWkqMNdlPcyXzkSRDksS1QZnoqTwchBrE3N4k4x4JWlsBEW9ALwqmVe1RzD7PuHa-0nFDQNLjONwtnit_rvvo8vd8xYPDX2jJfm7UpXkHdLjjwZi0Zqqyt5nDCq76QETXKZ61uD-5WlZZAEzemKC4YwrYlf9CjpjxskyMfmhJ8W1I4bApEl04XkOXpFYIHWxz15F8__4KBdlm8msNwiWdvZc"
-  },
-  {
-    id: "REQ-2942",
-    name: "Dr. John Doe",
-    email: "j.doe@example.com",
-    role: "General Practice",
-    license: "TX-11029-GP",
-    exp: "5 Years",
-    docs: ["Diploma.pdf"],
-    missingDocs: true,
-    status: "Needs Info",
-    time: "1 day ago",
-    avatar: null,
-    initials: "JD"
-  },
-  {
-    id: "REQ-2938",
-    name: "Dr. Emily Chen",
-    email: "e.chen@example.com",
-    role: "Pediatrician",
-    license: "MA-55291-MD",
-    exp: "15 Years",
-    docs: ["3 Documents"],
-    status: "Verified",
-    time: "2 days ago",
-    avatar: "https://lh3.googleusercontent.com/aida-public/AB6AXuAdRB0fWy8d3kiKhg17-Cg5W8KXvVqNBLxLTlAYmeOw4hDvzBgIlkmPvtblsDqqj5YVFetFqH-Zk7wsFZzrQgj34CiNH8u5WSIQ55W_5ZKqmDBM2qvOea_VJxlq0mPYhN5WhZ64yxP6tNBfbkOwvluO2n_Bv19pC1CxJRCsZ9cFr4VC1Cg4EdjlkWJstHVPGSiQYtACglNF5Eh0IFa6ek9vQ70Pb34T_HEh4NbUm4UVC7ZLjejoWWj9C2a0DThGITI-qIzp__BqN0E"
-  },
-  {
-    id: "REQ-2930",
-    name: "Mark Wilson",
-    email: "m.wilson@example.com",
-    role: "Therapist",
-    license: "--",
-    exp: "2 Years",
-    docs: ["Invalid Docs"],
-    status: "Rejected",
-    time: "3 days ago",
-    avatar: "https://lh3.googleusercontent.com/aida-public/AB6AXuBWka30KoK367JQLZVMGdVbRloQfwH54LWzQpR8XuUISpovvc4TGsUdWkqMNdlPcyXzkSRDksS1QZnoqTwchBrE3N4k4x4JWlsBEW9ALwqmVe1RzD7PuHa-0nFDQNLjONwtnit_rvvo8vd8xYPDX2jJfm7UpXkHdLjjwZi0Zqqyt5nDCq76QETXKZ61uD-5WlZZAEzemKC4YwrYlf9CjpjxskyMfmhJ8W1I4bApEl04XkOXpFYIHWxz15F8__4KBdlm8msNwiWdvZc"
-  }
-];
+ 
 
 export default function AdminVerification() {
+    const [doctorProfile, setDoctorProfile] = useState([]);
+  
+    useEffect(()=>{
+      const fetchDoctorProfile=async()=>{
+   try {
+          const respond = await getAllDoctorsProfile();
+          console.log(respond)
+   setDoctorProfile(respond.data.doctors); // Assuming the doctors array is in respond.data.doctors
+   } catch (error) {
+   console.error("Error fetching doctor profiles:", error);
+   }
+      };
+      fetchDoctorProfile();
+    },[])
 
   // Helper: Status Badge Styles
-  const getStatusBadge = (status) => {
-    switch (status) {
-      case 'Pending':
-        return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-            <span className="size-1.5 rounded-full bg-blue-500 animate-pulse"></span>
-            Pending Review
-          </span>
-        );
-      case 'In Review':
-        return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300 border border-orange-200 dark:border-orange-800">
-            <span className="material-symbols-outlined text-[12px]">search</span>
-            In Review
-          </span>
-        );
-      case 'Needs Info':
-        return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300 border border-yellow-200 dark:border-yellow-800">
-            <span className="material-symbols-outlined text-[12px]">info</span>
-            Needs Info
-          </span>
-        );
-      case 'Verified':
-        return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300 border border-green-200 dark:border-green-800">
-            <span className="material-symbols-outlined text-[12px]">check</span>
-            Verified
-          </span>
-        );
-      case 'Rejected':
-        return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300 border border-red-200 dark:border-red-800">
-            <span className="material-symbols-outlined text-[12px]">close</span>
-            Rejected
-          </span>
-        );
-      default: return null;
-    }
-  };
+ 
 
   return (
     <div className="bg-background-light dark:bg-background-dark text-med-dark dark:text-white font-display transition-colors duration-200 min-h-screen w-full flex flex-col">
@@ -178,7 +91,7 @@ export default function AdminVerification() {
         </div>
 
         {/* Verification Table */}
-        <div className="bg-white dark:bg-[#1a2c2c] h-[600px] rounded-2xl border border-[#e5e7eb] dark:border-[#2a3838] shadow-sm flex flex-col">
+        <div className="bg-white mb-4 dark:bg-[#1a2c2c] h-[600px] rounded-2xl border border-[#e5e7eb] dark:border-[#2a3838] shadow-sm flex flex-col">
           
           {/* Table Header Controls */}
           <div className="p-5 border-b border-[#e5e7eb] dark:border-[#2a3838] flex flex-col sm:flex-row justify-between sm:items-center gap-4">
@@ -194,114 +107,65 @@ export default function AdminVerification() {
           </div>
 
           {/* Table */}
-          <div className="overflow-x-auto scrollbar-hide">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-med-gray dark:bg-[#253636] text-med-text-secondary dark:text-gray-400 text-xs uppercase font-semibold">
-                <tr>
-                  <th className="px-6 py-4 whitespace-nowrap">Doctor Profile</th>
-                  <th className="px-6 py-4 whitespace-nowrap">Credentials</th>
-                  <th className="px-6 py-4 whitespace-nowrap">Documents</th>
-                  <th className="px-6 py-4 whitespace-nowrap">Status</th>
-                  <th className="px-6 py-4 text-right whitespace-nowrap">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#e5e7eb] dark:divide-[#2a3838]">
-                {REQUESTS.map((req) => (
-                  <tr key={req.id} className={`hover:bg-med-gray/30 dark:hover:bg-[#253636]/50 transition-colors ${req.status === 'Pending' ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''} ${req.status === 'Verified' || req.status === 'Rejected' ? 'opacity-75' : ''}`}>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        {req.avatar ? (
-                          <div className="bg-center bg-no-repeat bg-cover rounded-full size-10 shadow-sm" style={{ backgroundImage: `url(${req.avatar})` }}></div>
-                        ) : (
-                          <div className="bg-gray-200 dark:bg-gray-700 rounded-full size-10 flex items-center justify-center font-bold text-gray-500">{req.initials}</div>
-                        )}
-                        <div>
-                          <div className="font-semibold text-med-dark dark:text-white">{req.name}</div>
-                          <div className="text-xs text-med-text-secondary">{req.email}</div>
-                          <div className="text-xs text-med-text-secondary mt-0.5">ID: #{req.id}</div>
+         <div className="xl:col-span-2 mb-5 bg-white dark:bg-[#1a2c2c] rounded-2xl border border-[#e5e7eb] dark:border-[#2a3838] shadow-sm flex flex-col">
+              <div className="p-5 border-b border-[#e5e7eb] dark:border-[#2a3838] flex justify-between items-center">
+                <h3 className="font-bold text-med-dark dark:text-white">Pending Doctor Verifications</h3>
+                <a className="text-xs font-bold text-primary hover:text-primary-dark uppercase tracking-wide" href="#">View All</a>
+              </div>
+              <div className="p-0 overflow-x-auto scrollbar-hide">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-med-gray dark:bg-[#253636] text-med-text-secondary dark:text-gray-400 text-xs uppercase font-semibold">
+                    <tr>
+                      <th className="px-6 py-4 rounded-tl-lg">Doctor Name</th>
+                      <th className="px-6 py-4">Specialty</th>
+                      <th className="px-6 py-4">License ID</th>
+                      <th className="px-6 py-4">Submitted</th>
+                      <th className="px-6 py-4 rounded-tr-lg text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#e5e7eb] dark:divide-[#2a3838]">
+                    {/* Row 1 */}
+                    {doctorProfile?.map((value,index)=>{
+                      return(
+                        value.licenseNumber !=="N/A"?(
+ <tr key={index} className="hover:bg-med-gray/30 dark:hover:bg-[#253636]/50 transition-colors">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="bg-center bg-no-repeat bg-cover rounded-full size-8" style={{ backgroundImage:`url("${value.profileImage}")`}}></div>
+                          <div>
+                            <div className="font-semibold text-med-dark dark:text-white">{value.fullName}</div>
+                            <div className="text-xs text-med-text-secondary"> {value.user.email}</div>
+                          </div>
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="font-medium text-med-dark dark:text-gray-300">{req.role}</div>
-                      <div className="text-xs font-mono text-med-text-secondary bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded inline-block mt-1">{req.license}</div>
-                      <div className="text-xs text-med-text-secondary mt-1">Exp: {req.exp}</div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex flex-col gap-1.5">
-                        {req.missingDocs && (
-                          <div className="flex items-center gap-2 text-xs text-red-600 dark:text-red-400">
-                            <span className="material-symbols-outlined text-[16px]">warning</span>
-                            <span>Missing ID Scan</span>
-                          </div>
-                        )}
-                        {req.docs.map((doc, i) => (
-                          <div key={i} className={`flex items-center gap-2 text-xs ${req.status === 'Rejected' ? 'text-gray-500' : 'text-blue-600 dark:text-blue-400 hover:underline cursor-pointer'}`}>
-                            <span className="material-symbols-outlined text-[16px]">{doc === 'Invalid Docs' ? 'folder_off' : 'description'}</span>
-                            <span>{doc}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      {getStatusBadge(req.status)}
-                      <div className="text-[10px] text-med-text-secondary mt-1 ml-1">{req.status === 'Pending' ? 'Submitted' : req.status === 'Verified' ? 'Approved' : 'Updated'}: {req.time}</div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center justify-end gap-2">
-                        {req.status === 'Pending' || req.status === 'In Review' ? (
-                          <>
-                            <button className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 hover:bg-green-200 transition-colors text-xs font-bold" title="Approve">
-                              <span className="material-symbols-outlined text-[18px]">check_circle</span>
-                              Approve
-                            </button>
-                            <button className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300 hover:bg-red-200 transition-colors text-xs font-bold" title="Reject">
-                              <span className="material-symbols-outlined text-[18px]">cancel</span>
-                              Reject
-                            </button>
-                          </>
-                        ) : req.status === 'Needs Info' ? (
-                          <>
-                            <button className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white dark:bg-[#1a2c2c] border border-gray-200 dark:border-gray-700 text-med-dark dark:text-white hover:bg-gray-50 dark:hover:bg-[#253636] transition-colors text-xs font-bold shadow-sm">
-                              <span className="material-symbols-outlined text-[18px]">mail</span>
-                              Resend
-                            </button>
-                            <button className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white dark:bg-[#1a2c2c] border border-gray-200 dark:border-gray-700 text-med-dark dark:text-white hover:bg-gray-50 dark:hover:bg-[#253636] transition-colors text-xs font-bold shadow-sm">
-                              <span className="material-symbols-outlined text-[18px]">visibility</span>
-                              Details
-                            </button>
-                          </>
-                        ) : (
-                          <button className="text-med-text-secondary hover:text-primary transition-colors text-xs font-bold" title="View Details">
-                            {req.status === 'Rejected' ? 'View Reason' : 'View Profile'}
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                      </td>
+                      <td className="px-6 py-4 text-med-dark dark:text-gray-300">{value.specialization}</td>
+                      <td className="px-6 py-4 font-mono text-xs text-med-text-secondary">{value.licenseNumber}</td>
+                      <td className="px-6 py-4 text-med-text-secondary">2 hours ago</td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center justify-end gap-2">
+                          <button className="p-1.5 rounded-lg text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20" title="Approve"><span className="material-symbols-outlined text-[20px]">check_circle</span></button>
+                          <button className="p-1.5 rounded-lg text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20" title="Reject"><span className="material-symbols-outlined text-[20px]">cancel</span></button>
+                          <button className="p-1.5 rounded-lg text-med-text-secondary hover:bg-gray-100 dark:hover:bg-gray-800" title="View Details"><span className="material-symbols-outlined text-[20px]">visibility</span></button>
+                        </div>
+                      </td>
+                    </tr>
+                        ):null
 
-          {/* Pagination */}
-          <div className="p-4 border-t border-[#e5e7eb] dark:border-[#2a3838] bg-med-gray/30 dark:bg-[#1a2c2c] flex items-center justify-between">
-            <span className="text-sm text-med-text-secondary">Showing 1 to 5 of 14 entries</span>
-            <div className="flex items-center gap-2">
-              <button className="size-8 flex items-center justify-center rounded-lg border border-[#e5e7eb] dark:border-[#2a3838] bg-white dark:bg-[#253636] text-med-text-secondary hover:bg-med-gray dark:hover:bg-[#1a2c2c] disabled:opacity-50" disabled>
-                <span className="material-symbols-outlined text-[16px]">chevron_left</span>
-              </button>
-              <button className="size-8 flex items-center justify-center rounded-lg bg-primary text-white font-bold text-sm shadow-sm">1</button>
-              <button className="size-8 flex items-center justify-center rounded-lg border border-[#e5e7eb] dark:border-[#2a3838] bg-white dark:bg-[#253636] text-med-text-secondary hover:bg-med-gray dark:hover:bg-[#1a2c2c] font-bold text-sm">2</button>
-              <button className="size-8 flex items-center justify-center rounded-lg border border-[#e5e7eb] dark:border-[#2a3838] bg-white dark:bg-[#253636] text-med-text-secondary hover:bg-med-gray dark:hover:bg-[#1a2c2c]">
-                <span className="material-symbols-outlined text-[16px]">chevron_right</span>
-              </button>
+                      )
+                    })}
+                   
+                    {/* Row 2 */}
+                   
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
+          {/* Pagination */}
+    
         </div>
 
         {/* Info Box */}
-        <div className="bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/30 rounded-2xl p-6 flex items-start gap-4">
+        <div className="bg-blue-50 mt-5 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/30 rounded-2xl p-6 flex items-start gap-4">
           <div className="p-3 bg-blue-100 dark:bg-blue-800/40 rounded-full text-blue-600 dark:text-blue-300 shrink-0">
             <span className="material-symbols-outlined">security</span>
           </div>
