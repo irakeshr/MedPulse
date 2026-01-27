@@ -1,6 +1,8 @@
 import React from 'react';
 import { useState,useEffect } from 'react';
 import { getAllDoctorsProfile } from '../../server/allApi';
+import { formatDistanceToNow, isValid } from "date-fns";
+
 
 // --- MOCK DATA ---
 const STATS = [
@@ -140,7 +142,14 @@ export default function AdminVerification() {
                       </td>
                       <td className="px-6 py-4 text-med-dark dark:text-gray-300">{value.specialization}</td>
                       <td className="px-6 py-4 font-mono text-xs text-med-text-secondary">{value.licenseNumber}</td>
-                      <td className="px-6 py-4 text-med-text-secondary">2 hours ago</td>
+                      <td className="px-6 py-4 text-med-text-secondary">
+
+                        {value.updatedAt && isValid(new Date(value.updatedAt))
+                                                                            ? formatDistanceToNow(new Date(value.updatedAt), {
+                                                                                addSuffix: true,
+                                                                              })
+                                                                            : "N/A"} 
+                      </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center justify-end gap-2">
                           <button className="p-1.5 rounded-lg text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20" title="Approve"><span className="material-symbols-outlined text-[20px]">check_circle</span></button>

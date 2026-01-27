@@ -16,6 +16,8 @@ const Login = ({ setRegisterPage }) => {
     email: "",
     password: "",
   });
+ 
+  const [showPassword, setShowPassword] = useState(false);
 
   // Google Auth
 
@@ -42,8 +44,8 @@ const Login = ({ setRegisterPage }) => {
           const role = respond.data.role;
           if (role === "doctor") {
             setTimeout(() => {
-            navigate("/doctor/dashboard");
-          }, 1500);
+              navigate("/doctor/dashboard");
+            }, 1500);
           } else if (role === "patient") {
             navigate("/me");
           } else if (role === "admin") {
@@ -55,12 +57,9 @@ const Login = ({ setRegisterPage }) => {
       toast(
         <CustomToast
           title="Failed Role"
-          message={
-            error.message ||
-            "Something went wrong during Google login."
-          }
+          message={error.message || "Something went wrong during Google login."}
           type="error"
-        />,
+        />
       );
     }
   };
@@ -81,24 +80,34 @@ const Login = ({ setRegisterPage }) => {
   const handleLogin = async () => {
     const { email, password } = loginDetails;
     if (!email || !password) {
-      toast.warning("Please fill in all fields.");
+      toast(
+  <CustomToast
+    title="Missing Information"
+    message="Please fill in all required fields to continue."
+    type="error"
+  />,
+  {
+    bodyClassName: "p-5 m-0",
+    closeButton: false,
+  }
+);
       return;
     }
     try {
       const res = await userLogin(loginDetails);
       if (res.status === 200) {
         localStorage.setItem("token", res.data.token);
-               toast(
-    <CustomToast 
-      title="Login Successfully"
-      message= "Welcome back MedPulse, where health begin." 
-      type="success"
-    />, 
-    {
-      bodyClassName: "p-5 m-0",
-      closeButton: false  
-    }
-  );
+        toast(
+          <CustomToast
+            title="Login Successfully"
+            message="Welcome back MedPulse, where health begin."
+            type="success"
+          />,
+          {
+            bodyClassName: "p-5 m-0",
+            closeButton: false,
+          }
+        );
         dispatch(loginSuccess());
         if (res.data.role == "doctor") {
           setTimeout(() => {
@@ -120,10 +129,9 @@ const Login = ({ setRegisterPage }) => {
               type="error"
             />,
             {
-             
               bodyClassName: "p-5 m-0",
               closeButton: false,
-            },
+            }
           );
         }
       } else {
@@ -134,27 +142,19 @@ const Login = ({ setRegisterPage }) => {
             type="error"
           />,
           {
-           
             bodyClassName: "p-5 m-0",
             closeButton: false,
-          },
+          }
         );
       }
     } catch (error) {
-      const errorMessage =
-        error.message || "Something went wrong during login.";
+      const errorMessage = error.message || "Something went wrong during login.";
       toast(
-        <CustomToast
-          title="Login Failed"
-          message={errorMessage}
-          type="error"
-        />,
+        <CustomToast title="Login Failed" message={errorMessage} type="error" />,
         {
-          // Optional: specific overrides for just this toast
-     
           bodyClassName: "p-5 m-0",
-          closeButton: false, // We are using our own close button inside the component
-        },
+          closeButton: false,
+        }
       );
     }
   };
@@ -227,7 +227,7 @@ const Login = ({ setRegisterPage }) => {
                 className="w-full bg-med-gray dark:bg-[#253636] border-transparent focus:border-primary focus:ring-0 rounded-xl py-3 pl-11 pr-12 text-sm text-med-dark dark:text-white placeholder:text-med-text-secondary/70 dark:placeholder:text-gray-500 transition-all shadow-sm"
                 id="password"
                 placeholder="••••••••"
-                type="password"
+                type={showPassword ? "text" : "password"}    
                 name="password"
                 value={loginDetails.password}
                 onChange={handleChange}
@@ -235,9 +235,10 @@ const Login = ({ setRegisterPage }) => {
               <button
                 className="absolute inset-y-0 right-0 pr-4 flex items-center text-med-text-secondary hover:text-med-dark dark:hover:text-white transition-colors"
                 type="button"
+                onClick={() => setShowPassword((p) => !p)} 
               >
                 <span className="material-symbols-outlined text-[20px]">
-                  visibility_off
+                  {showPassword ? "visibility" : "visibility_off"}  
                 </span>
               </button>
             </div>
@@ -273,11 +274,7 @@ const Login = ({ setRegisterPage }) => {
             </span>
             <div className="flex-grow border-t border-gray-100 dark:border-gray-700"></div>
           </div>
-          <GoogleLogin
-            onSuccess={handleSuccess}
-            onError={handleError}
-            useOneTap
-          >
+          <GoogleLogin onSuccess={handleSuccess} onError={handleError} useOneTap>
             <button
               className="w-full bg-white dark:bg-[#253636] border border-gray-200 dark:border-[#2a3838] hover:bg-gray-50 dark:hover:bg-[#2a3838] text-med-dark dark:text-white font-medium text-sm py-3 rounded-xl transition-colors flex items-center justify-center gap-3 group"
               type="button"

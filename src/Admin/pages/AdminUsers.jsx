@@ -5,10 +5,13 @@ import CountUp from "../../../reactBitAnimation/CountUp";
 import { toast } from "react-toastify";
 import CustomToast from "../../components/CustomToast";
 import { Pagination, PaginationItem } from "@mui/material";
+import { useSelector,useDispatch } from "react-redux";
+import { setStats } from "../../redux/adminSlice";
  
  
 
 export default function AdminUsers() {
+  const dispatch = useDispatch();
   const [SearchKey, setSearchKey] = useState();
   const [allUsers, setAllUsers] = useState([]);
   const [usersCount, setUsersCount] = useState({});
@@ -92,6 +95,7 @@ export default function AdminUsers() {
       if (res.status === 200) {
         setAllUsers(res.data.allUsers);
         setUsersCount(res.data.usersCount);
+        dispatch(setStats(res.data))
         setPagination(res.data.pagination);
         console.log("pagination from API:", res.data.pagination);
       }
@@ -142,6 +146,8 @@ export default function AdminUsers() {
     pagination.currentPage * pagination.limit,
     pagination.totalCount
   );
+  
+  
 
   return (
      
