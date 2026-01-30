@@ -116,7 +116,7 @@ useEffect(() => {
           ) : (
             // Login Button (If Logged Out)
             <Link 
-              to="/login"
+              to="/"
               onClick={() => setIsLoggedIn(true)} // Temp: Click to Login
               className="ml-2 px-5 py-2 bg-primary hover:bg-primary/90 text-med-dark font-semibold text-sm rounded-xl transition-all shadow-sm shadow-primary/20"
             >

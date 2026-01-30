@@ -1,5 +1,7 @@
 import React from "react";
 import TimelineSlot from "../components/TimelineSlot";
+import NewAppointmentModal from "../components/NewAppointmentModal";
+import { useState } from "react";
 const SCHEDULE_ITEMS = [
   {
     time: "08:00 AM",
@@ -67,9 +69,11 @@ const SCHEDULE_ITEMS = [
   }
 ];
 export default function SchedulePage() {
+  const [isOpen, setIsOpen] = useState(false);
+
   return (
     <div className="bg-white dark:bg-[#1a2c2c] text-[#111818] dark:text-white font-display transition-colors duration-200 h-screen w-full flex flex-col">
-      
+      <NewAppointmentModal onClose={()=>setIsOpen(!isOpen)} isOpen={!isOpen}/>
       {/* Mobile Header */}
       <header className="lg:hidden flex items-center justify-between p-4 bg-surface-light dark:bg-surface-dark border-b border-[#dbe6e6] dark:border-[#2a3c3c]">
         <div className="flex items-center gap-2">
@@ -107,7 +111,7 @@ export default function SchedulePage() {
                   Define Availability
                 </button>
                 <button className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-[#085555] font-bold shadow-md shadow-primary/20 hover:bg-[#0ebdbd] hover:text-white transition-all">
-                  <span className="material-symbols-outlined">add</span>
+                  <span className="material-symbols-outlined " onClick={()=>setIsOpen(!isOpen)}>add</span>
                   New Appointment
                 </button>
               </div>

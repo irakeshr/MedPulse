@@ -28,6 +28,7 @@ import AdminTopics from './Admin/pages/AdminTopics';
 import AdminSettings from './Admin/pages/AdminSettings';
 import ProtectedAdmin from './routes/ProtectedAdmin';
 import RoleSelection from './components/RoleSelection';
+import AppointmentBooking from './User/pages/AppointmentBooking';
 const App = () => {
   return (
     <div >
@@ -51,6 +52,7 @@ const App = () => {
           <Route path="/community/:categoryId" element={<CommunityDetailFeed />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/doctors" element={<FindDoctorPage />} />
+          <Route path="/AppointmentBooking" element={<AppointmentBooking />} />
         </Route>
       </Route>
 

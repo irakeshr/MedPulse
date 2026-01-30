@@ -1,12 +1,17 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
+ 
 
 const DoctorModal = ({ isOpen, onClose, doctor }) => {
+
+ 
   // If modal is closed or no doctor selected, return nothing
   if (!isOpen || !doctor) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
       <div 
+      
         className="relative w-full max-w-lg bg-white dark:bg-[#1a2c2c] rounded-2xl shadow-2xl overflow-hidden border border-[#e5e7eb] dark:border-[#2a3838] animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()} // Prevent clicking inside modal from closing it
       >
@@ -79,10 +84,10 @@ const DoctorModal = ({ isOpen, onClose, doctor }) => {
 
           {/* Footer Buttons */}
           <div className="flex gap-3 mt-2">
-            <button className="flex-1 py-3 bg-primary hover:bg-primary/90 text-med-dark font-bold rounded-xl transition-colors shadow-sm shadow-primary/20 flex items-center justify-center gap-2">
+            <Link to={"/AppointmentBooking"} className="flex-1 py-3 bg-primary hover:bg-primary/90 text-med-dark font-bold rounded-xl transition-colors shadow-sm shadow-primary/20 flex items-center justify-center gap-2">
               <span className="material-symbols-outlined">calendar_month</span>
               Book Appointment
-            </button>
+            </Link>
             <button className="flex-1 py-3 bg-white dark:bg-[#253636] border border-gray-200 dark:border-gray-700 hover:border-primary/50 text-med-dark dark:text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2">
               View Full Profile
             </button>

@@ -97,3 +97,7 @@ export const DeleteUser=async(userId,reqBody)=>{
   return await CommonApi("DELETE",`${SERVER_URL}/admin/${userId}/delete-user`,reqBody)
 }
  
+export const VerifyDoctor =async(doctorId,reqBody)=>{
+  return await CommonApi("PUT",`${SERVER_URL}/admin/${doctorId}/doctor-verify`,reqBody)
+
+}

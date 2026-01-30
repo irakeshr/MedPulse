@@ -1,7 +1,9 @@
 import React from 'react';
 import { useState,useEffect } from 'react';
-import { getAllDoctorsProfile } from '../../server/allApi';
+import { getAllDoctorsProfile, VerifyDoctor } from '../../server/allApi';
 import { formatDistanceToNow, isValid } from "date-fns";
+import { toast } from 'react-toastify';
+import CustomToast from '../../components/CustomToast';
 
 
 // --- MOCK DATA ---
@@ -15,7 +17,7 @@ const STATS = [
 export default function AdminVerification() {
     const [doctorProfile, setDoctorProfile] = useState([]);
   
-    useEffect(()=>{
+    
       const fetchDoctorProfile=async()=>{
    try {
           const respond = await getAllDoctorsProfile();
@@ -25,10 +27,46 @@ export default function AdminVerification() {
    console.error("Error fetching doctor profiles:", error);
    }
       };
+      useEffect(()=>{
       fetchDoctorProfile();
     },[])
 
   // Helper: Status Badge Styles
+
+
+
+  // Doctor Verification 
+
+  const handleVerification = async (doctorId,status)=>{
+
+    try {
+      console.log(doctorId,status);
+      
+      const respond = await  VerifyDoctor(doctorId,{status:status})
+
+      if(respond.status==200){
+         toast(
+          <CustomToast
+            title={`${status}`}
+            message={respond?.data?.message}
+            type= {status == "verified" ? "success" :"error"}
+          />
+        );
+
+        fetchDoctorProfile();
+      }
+      
+    } catch (error) {
+      <CustomToast
+            title={`${status}`}
+            message={error?.respond?.message}
+            type= {status == "verified" ? "success" :"error"}
+          />
+      console.error(error);
+      
+    }
+
+  }
  
 
   return (
@@ -150,13 +188,64 @@ export default function AdminVerification() {
                                                                               })
                                                                             : "N/A"} 
                       </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center justify-end gap-2">
-                          <button className="p-1.5 rounded-lg text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20" title="Approve"><span className="material-symbols-outlined text-[20px]">check_circle</span></button>
-                          <button className="p-1.5 rounded-lg text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20" title="Reject"><span className="material-symbols-outlined text-[20px]">cancel</span></button>
-                          <button className="p-1.5 rounded-lg text-med-text-secondary hover:bg-gray-100 dark:hover:bg-gray-800" title="View Details"><span className="material-symbols-outlined text-[20px]">visibility</span></button>
-                        </div>
-                      </td>
+<td className="px-6 py-4">
+  <div className="flex items-center justify-end gap-2">
+    {/* Pending State: Accept or Reject */}
+    {value.verificationStatus === "pending" && (
+      <>
+        <button 
+          className="p-1.5 rounded-lg text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors" 
+          title="Accept Doctor" 
+          onClick={() => handleVerification(value._id, "verified")}
+        >
+          <span className="material-symbols-outlined text-[20px]">check_circle</span>
+        </button>
+        <button 
+          className="p-1.5 rounded-lg text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors" 
+          title="Reject Doctor" 
+          onClick={() => handleVerification(value._id, "rejected")}
+        >
+          <span className="material-symbols-outlined text-[20px]">cancel</span>
+        </button>
+      </>
+    )}
+    
+    {/* Rejected State: Delete and Request Resubmit */}
+    {value.verificationStatus === "rejected" && (
+      <>
+        <button 
+          className="p-1.5 rounded-lg text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors"
+          title="Request Resubmission"
+          onClick={() => handleResubmitRequest(value._id)}
+        >
+          <span className="material-symbols-outlined text-[20px]">refresh</span>
+        </button>
+        <button
+          onClick={() => VerifyDoctor(value._id, value.username)}
+          className="p-1.5 rounded-lg text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+          title="Delete Doctor"
+        >
+          <span className="material-symbols-outlined text-[20px]">delete</span>
+        </button>
+      </>
+    )}
+    
+    {/* Verified State: Show Verified Tick */}
+    {value.verificationStatus === "verified" && (
+      <div className="p-1.5 text-green-600" title="Verified Doctor">
+        <span className="material-symbols-outlined text-[20px]">verified</span>
+      </div>
+    )}
+    
+    {/* View Details - Always Visible */}
+    <button 
+      className="p-1.5 rounded-lg text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 transition-colors ml-1" 
+      title="View Details"
+    >
+      <span className="material-symbols-outlined text-[20px]">visibility</span>
+    </button>
+  </div>
+</td>
                     </tr>
                         ):null
 
