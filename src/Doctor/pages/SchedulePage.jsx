@@ -110,8 +110,8 @@ export default function SchedulePage() {
                   <span className="material-symbols-outlined text-[20px]">edit_calendar</span>
                   Define Availability
                 </button>
-                <button className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-[#085555] font-bold shadow-md shadow-primary/20 hover:bg-[#0ebdbd] hover:text-white transition-all">
-                  <span className="material-symbols-outlined " onClick={()=>setIsOpen(!isOpen)}>add</span>
+                <button onClick={()=>setIsOpen(!isOpen)} className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-[#085555] font-bold shadow-md shadow-primary/20 hover:bg-[#0ebdbd] hover:text-white transition-all">
+                  <span className="material-symbols-outlined " >add</span>
                   New Appointment
                 </button>
               </div>
