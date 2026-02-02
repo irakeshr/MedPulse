@@ -4,10 +4,40 @@ import { ToastContainer ,toast } from "react-toastify";
 import { useSelector } from "react-redux";
 import Header from "../components/DoctorHeader";
 import DoctorHeader from "../components/DoctorHeader";
+import { useEffect } from "react";
+import { useDispatch } from "react-redux";
+import { checkDoctorStatus } from "../../server/allApi";
+
+ 
+import CustomToast from "../../components/CustomToast";
+import { checkVerification } from "../../redux/doctorSlicer";
+
 
 export default function DoctorLayout() {
+  const dispatch = useDispatch();
 
+      useEffect(() => {
+       
+       const checkStatus=async()=>{
    
+         try{
+           const respond =await checkDoctorStatus();
+           if(respond.status==200){
+             dispatch(checkVerification(respond.data));
+           }
+   
+         }catch(error){
+           toast(
+             <CustomToast
+               title="Verification Failed"
+               message={error.response?.data?.message || "An unexpected error occurred while checking verification status."}
+               type="error"
+             />
+           );
+         }
+       }
+       checkStatus(); // Call the async function
+     }, [dispatch]); 
 
   return (
     // MAIN WRAPPER

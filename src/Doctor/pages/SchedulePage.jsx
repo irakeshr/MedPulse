@@ -69,7 +69,7 @@ const SCHEDULE_ITEMS = [
   }
 ];
 export default function SchedulePage() {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(true);
 
   return (
     <div className="bg-white dark:bg-[#1a2c2c] text-[#111818] dark:text-white font-display transition-colors duration-200 h-screen w-full flex flex-col">

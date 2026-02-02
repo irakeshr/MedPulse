@@ -1,13 +1,17 @@
 import React, { useRef } from 'react';
 
 const NewAppointmentModal = ({ isOpen, onClose }) => {
-    useRef
+  // 1. Create refs for each input field
+  const dateRef = useRef(null);
+  const startRef = useRef(null);
+  const endRef = useRef(null);
+
   if (!isOpen) return null;
 
   return (
     <div onClick={onClose} className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#111818]/60 backdrop-blur-sm transition-all">
       {/* Modal Container */}
-      <div onClick={(e)=>e.stopPropagation()} className="w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300 relative 
+      <div onClick={(e) => e.stopPropagation()} className="w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300 relative 
         bg-white dark:bg-[#1a2c2c] transition-colors duration-200">
         
         {/* Close Button */}
@@ -29,12 +33,17 @@ const NewAppointmentModal = ({ isOpen, onClose }) => {
           </h2>
 
           {/* Date Input */}
-          <div className="relative group">
+          {/* 2. Add onClick to wrapper and attach dateRef */}
+          <div 
+            onClick={() => dateRef.current.showPicker ? dateRef.current.showPicker() : dateRef.current.focus()}
+            className="relative group cursor-text"
+          > 
             <span className="material-symbols-outlined absolute left-6 top-1/2 -translate-y-1/2 text-[20px] pointer-events-none transition-colors
               text-gray-400 dark:text-gray-500 group-focus-within:text-[#00e0d0]">
               calendar_today
             </span>
             <input
+              ref={dateRef}
               className="w-full pl-14 pr-6 py-4 rounded-full focus:text-[#252525] font-medium outline-none transition-all shadow-sm
               bg-gray-50 text-[#111818] placeholder-gray-400 focus:bg-white focus:ring-2 focus:ring-[#00e0d0]/50
               dark:bg-[#111818] dark:text-white dark:placeholder-gray-600 dark:focus:ring-[#00e0d0]"
@@ -47,12 +56,18 @@ const NewAppointmentModal = ({ isOpen, onClose }) => {
 
           {/* Time Inputs Row */}
           <div className="grid grid-cols-2 gap-4">
-            <div className="relative group">
+            
+            {/* Start Time Wrapper */}
+            <div 
+              onClick={() => startRef.current.showPicker ? startRef.current.showPicker() : startRef.current.focus()}
+              className="relative group cursor-text"
+            >
               <span className="material-symbols-outlined absolute left-6 top-1/2 -translate-y-1/2 text-[20px] pointer-events-none transition-colors
                 text-gray-400 dark:text-gray-500 group-focus-within:text-[#00e0d0]">
                 schedule
               </span>
               <input
+                ref={startRef}
                 className="w-full focus:text-[#252525] pl-14 pr-6 py-4 rounded-full font-medium outline-none transition-all shadow-sm
                 bg-gray-50 text-[#111818] placeholder-gray-400 focus:bg-white focus:ring-2 focus:ring-[#00e0d0]/50
                 dark:bg-[#111818] dark:text-white dark:placeholder-gray-600 dark:focus:ring-[#00e0d0]"
@@ -61,12 +76,18 @@ const NewAppointmentModal = ({ isOpen, onClose }) => {
                 type="time"
               />
             </div>
-            <div className="relative group">
+
+            {/* End Time Wrapper */}
+            <div 
+              onClick={() => endRef.current.showPicker ? endRef.current.showPicker() : endRef.current.focus()}
+              className="relative group cursor-text"
+            >
               <span className="material-symbols-outlined absolute left-6 top-1/2 -translate-y-1/2 text-[20px] pointer-events-none transition-colors
                 text-gray-400 dark:text-gray-500 group-focus-within:text-[#00e0d0]">
                 timer
               </span>
               <input
+                ref={endRef}
                 className="w-full focus:text-[#252525] pl-14 pr-6 py-4 rounded-full font-medium outline-none transition-all shadow-sm
                 bg-gray-50 text-[#111818] placeholder-gray-400 focus:bg-white focus:ring-2 focus:ring-[#00e0d0]/50
                 dark:bg-[#111818] dark:text-white dark:placeholder-gray-600 dark:focus:ring-[#00e0d0]"
@@ -77,9 +98,6 @@ const NewAppointmentModal = ({ isOpen, onClose }) => {
             </div>
           </div>
 
-       
-          {/* Consultation Type Select */}
-           
           {/* Action Buttons */}
           <div className="flex items-center gap-4 pt-6 mt-4">
             <button

@@ -103,13 +103,6 @@ export default function DoctorDashboard() {
         const respond =await checkDoctorStatus();
         if(respond.status==200){
           dispatch(checkVerification(respond.data));
-           toast(
-          <CustomToast 
-            title="Verification Status"
-            message={respond?.data?.message}
-            type="success"
-          />
-        );
         }
 
       }catch(error){
