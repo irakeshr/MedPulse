@@ -4,7 +4,7 @@ const DoctorCard = ({ doctor, onViewProfile }) => (
       
       {/* Avatar */}
       <div className="relative shrink-0 mx-auto sm:mx-0">
-        <div className="size-24 rounded-2xl bg-cover bg-center border border-gray-100 dark:border-gray-700 shadow-inner" style={{ backgroundImage: `url('${doctor.image}')` }}></div>
+        <div className="size-24 rounded-2xl bg-cover bg-center border border-gray-100 dark:border-gray-700 shadow-inner" style={{ backgroundImage: `url('${doctor.profileImage}')` }}></div>
         <div className="absolute -bottom-2 -right-2 bg-white dark:bg-[#1a2c2c] rounded-full p-1 shadow-sm">
           <span className="material-symbols-outlined text-primary text-[20px] fill">verified</span>
         </div>
@@ -14,8 +14,8 @@ const DoctorCard = ({ doctor, onViewProfile }) => (
       <div className="flex-1 flex flex-col">
         <div className="flex justify-between items-start mb-1">
           <div>
-            <h3 className="text-lg font-bold text-med-dark dark:text-white group-hover:text-primary transition-colors">{doctor.name}</h3>
-            <p className="text-sm font-medium text-med-text-secondary dark:text-gray-400">{doctor.specialty} • {doctor.experience}</p>
+            <h3 className="text-lg font-bold text-med-dark dark:text-white group-hover:text-primary transition-colors">{doctor.displayName}</h3>
+            <p className="text-sm font-medium text-med-text-secondary dark:text-gray-400">{doctor.specialization} • {doctor.experienceYears}</p>
           </div>
           <div className="flex items-center bg-yellow-50 dark:bg-yellow-900/10 px-2 py-1 rounded-lg border border-yellow-100 dark:border-yellow-900/20">
             <span className="material-symbols-outlined text-yellow-500 text-[16px] fill mr-1">star</span>
@@ -25,7 +25,8 @@ const DoctorCard = ({ doctor, onViewProfile }) => (
         </div>
         
         <p className="text-sm text-med-dark dark:text-gray-300 leading-relaxed line-clamp-2 mb-3">
-          {doctor.description}
+          {doctor.profileBio
+}
         </p>
 
         {/* Status Badges */}

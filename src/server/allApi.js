@@ -27,6 +27,12 @@ export const updateProfile = async (reqBody) => {
 export const getUserProfile = async () => {
   return await CommonApi("GET", `${SERVER_URL}/user/get-profile`);
 };
+export const fetchAllDoctors = async () => {
+  return await CommonApi("GET", `${SERVER_URL}/user/get-allDoctors`);
+};
+export const fetchOneDoctor = async (doctorId) => {
+  return await CommonApi("GET", `${SERVER_URL}/user/${doctorId}/get-OneDoctor`);
+};
 
 // post api
 

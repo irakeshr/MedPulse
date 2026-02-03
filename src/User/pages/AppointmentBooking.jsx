@@ -1,18 +1,28 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
+import { fetchOneDoctor } from '../../server/allApi';
 
 const AppointmentBooking = () => {
-  // --- Demo Data Configuration ---
-  const doctorProfile = {
-    name: "Dr. Emily Chen",
-    role: "Sleep Specialist & GP",
-    rating: 4.9,
-    reviews: 128,
-    experience: "12 Years",
-    hospital: "City General Hospital, NY",
-    fee: "$120.00",
-    image: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?q=80&w=300&auto=format&fit=crop",
-    isVerified: true
-  };
+  const { doctorId } = useParams();
+  const [doctor, setDoctor] = useState([]);
+  const [loading, setLoading] = useState(true);
+  
+  useEffect(() => {
+    const doctorDetails = async () => {
+      try {
+        const respond = await fetchOneDoctor(doctorId);
+        console.log(respond)
+        setDoctor(respond.data.doctor);
+      } catch (error) {
+        console.log(error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    if (doctorId) doctorDetails();
+  }, [doctorId]);
+  
+ 
 
   const calendarDates = [
     { day: "Mon", date: "16", status: "active" },
@@ -38,6 +48,8 @@ const AppointmentBooking = () => {
     { time: "04:00 PM", status: "available" },
   ];
 
+  console.log(doctor)
+
   return (
     <div className="bg-white dark:bg-background-dark text-med-dark dark:text-white font-display overflow-x-hidden transition-colors duration-200">
       <div className="relative flex min-h-screen w-full flex-col">
@@ -55,21 +67,21 @@ const AppointmentBooking = () => {
                     <div className="size-24 rounded-full border-4 border-primary/20 overflow-hidden">
                       <div
                         className="w-full h-full bg-center bg-no-repeat bg-cover"
-                        style={{ backgroundImage: `url("${doctorProfile.image}")` }}
+                        style={{ backgroundImage: `url("${doctor.profileImage}")` }}
                       ></div>
                     </div>
-                    {doctorProfile.isVerified && (
+                    {doctor.isVerified && (
                       <div className="absolute bottom-1 right-1 bg-white dark:bg-[#1a2c2c] rounded-full p-1 shadow-sm border border-gray-100 dark:border-gray-800">
                         <span className="material-symbols-outlined text-primary fill text-[18px]">verified</span>
                       </div>
                     )}
                   </div>
-                  <h2 className="text-xl font-bold text-med-dark dark:text-white">{doctorProfile.name}</h2>
-                  <p className="text-sm text-med-text-secondary dark:text-gray-400 font-medium">{doctorProfile.role}</p>
+                  <h2 className="text-xl font-bold text-med-dark dark:text-white">{doctor.displayName}</h2>
+                  <p className="text-sm text-med-text-secondary dark:text-gray-400 font-medium">{doctor.role}</p>
                   <div className="flex items-center gap-1 mt-2">
                     <span className="material-symbols-outlined text-yellow-400 fill text-[18px]">star</span>
-                    <span className="text-sm font-bold text-med-dark dark:text-white">{doctorProfile.rating}</span>
-                    <span className="text-xs text-med-text-secondary dark:text-gray-500">({doctorProfile.reviews} Reviews)</span>
+                    <span className="text-sm font-bold text-med-dark dark:text-white">{doctor.rating}</span>
+                    <span className="text-xs text-med-text-secondary dark:text-gray-500">({doctor.reviews} Reviews)</span>
                   </div>
                 </div>
 
@@ -77,15 +89,15 @@ const AppointmentBooking = () => {
                 <div className="space-y-4 pt-4 border-t border-med-gray dark:border-[#2a3838]">
                   <div>
                     <h4 className="text-[10px] font-bold uppercase tracking-wider text-med-text-secondary dark:text-gray-500 mb-1">Experience</h4>
-                    <p className="text-sm text-med-dark dark:text-gray-300 font-medium">{doctorProfile.experience}</p>
+                    <p className="text-sm text-med-dark dark:text-gray-300 font-medium">{doctor.experienceYears}</p>
                   </div>
                   <div>
                     <h4 className="text-[10px] font-bold uppercase tracking-wider text-med-text-secondary dark:text-gray-500 mb-1">Hospital</h4>
-                    <p className="text-sm text-med-dark dark:text-gray-300 font-medium">{doctorProfile.hospital}</p>
+                    <p className="text-sm text-med-dark dark:text-gray-300 font-medium">N/A</p>
                   </div>
                   <div>
                     <h4 className="text-[10px] font-bold uppercase tracking-wider text-med-text-secondary dark:text-gray-500 mb-1">Consultation Fee</h4>
-                    <p className="text-sm text-med-dark dark:text-gray-300 font-medium font-bold text-primary">{doctorProfile.fee}</p>
+                    <p className="text-sm text-med-dark dark:text-gray-300 font-medium font-bold text-primary">{doctor.fee}</p>
                   </div>
                 </div>
 
@@ -106,7 +118,7 @@ const AppointmentBooking = () => {
                   Back to Profile
                 </button>
                 <h1 className="text-2xl font-bold text-med-dark dark:text-white">Select Appointment Slots</h1>
-                <p className="text-med-text-secondary dark:text-gray-400 mt-1">Available slots based on {doctorProfile.name}'s schedule</p>
+                <p className="text-med-text-secondary dark:text-gray-400 mt-1">Available slots based on {doctor.displayName}'s schedule</p>
               </div>
 
               <div className="bg-white dark:bg-[#1a2c2c] rounded-2xl shadow-sm border border-[#e5e7eb] dark:border-[#2a3838] overflow-hidden mb-8">

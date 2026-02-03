@@ -52,7 +52,7 @@ const App = () => {
           <Route path="/community/:categoryId" element={<CommunityDetailFeed />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/doctors" element={<FindDoctorPage />} />
-          <Route path="/AppointmentBooking" element={<AppointmentBooking />} />
+          <Route path="/AppointmentBooking/:doctorId" element={<AppointmentBooking />} />
         </Route>
       </Route>
 

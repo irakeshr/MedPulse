@@ -1,9 +1,12 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
  
+ 
 
 const DoctorModal = ({ isOpen, onClose, doctor }) => {
 
+
+  
  
   // If modal is closed or no doctor selected, return nothing
   if (!isOpen || !doctor) return null;
@@ -35,7 +38,7 @@ const DoctorModal = ({ isOpen, onClose, doctor }) => {
               <div className="size-24 rounded-full border-4 border-white dark:border-[#1a2c2c] bg-white dark:bg-[#1a2c2c] overflow-hidden shadow-sm">
                 <div 
                   className="w-full h-full bg-center bg-no-repeat bg-cover" 
-                  style={{ backgroundImage: `url('${doctor.image}')` }}
+                  style={{ backgroundImage: `url('${doctor.profileImage}')` }}
                 ></div>
               </div>
               <div className="absolute bottom-1 right-1 bg-white dark:bg-[#1a2c2c] rounded-full p-1 shadow-sm border border-gray-100 dark:border-gray-800">
@@ -54,8 +57,8 @@ const DoctorModal = ({ isOpen, onClose, doctor }) => {
 
           {/* Name & Stats */}
           <div className="mb-5">
-            <h2 className="text-2xl font-bold text-med-dark dark:text-white mb-1">{doctor.name}</h2>
-            <p className="text-med-text-secondary dark:text-gray-400 font-medium">{doctor.specialty || "Specialist"}</p>
+            <h2 className="text-2xl font-bold text-med-dark dark:text-white mb-1">{doctor.displayName}</h2>
+            <p className="text-med-text-secondary dark:text-gray-400 font-medium">{doctor.specialization || "Specialist"}</p>
             
             <div className="flex items-center gap-4 mt-3 text-sm">
               <div className="flex items-center gap-1 text-med-dark dark:text-gray-200">
@@ -84,7 +87,7 @@ const DoctorModal = ({ isOpen, onClose, doctor }) => {
 
           {/* Footer Buttons */}
           <div className="flex gap-3 mt-2">
-            <Link to={"/AppointmentBooking"} className="flex-1 py-3 bg-primary hover:bg-primary/90 text-med-dark font-bold rounded-xl transition-colors shadow-sm shadow-primary/20 flex items-center justify-center gap-2">
+            <Link to={`/AppointmentBooking/${doctor._id}`} className="flex-1 py-3 bg-primary hover:bg-primary/90 text-med-dark font-bold rounded-xl transition-colors shadow-sm shadow-primary/20 flex items-center justify-center gap-2">
               <span className="material-symbols-outlined">calendar_month</span>
               Book Appointment
             </Link>

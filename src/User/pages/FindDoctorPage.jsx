@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Link, useFetcher } from 'react-router-dom';
 import DoctorModal from '../components/DoctorModal'; // Make sure you have this
 import DoctorCard from '../components/DoctorCard';
+import { fetchAllDoctors } from '../../server/allApi';
 
 // --- MOCK DATA ---
 const DOCTORS_DATA = [
@@ -82,6 +83,24 @@ const DOCTORS_DATA = [
 
 export default function FindDoctorPage() {
   const [selectedDoctor, setSelectedDoctor] = useState(null);
+  const [DOCTORS_DATA, setDOCTORS_DATA] = useState([]);
+
+
+  useEffect(() => {
+    const loadDoctors = async () => {
+      try {
+        const respond = await fetchAllDoctors();
+        setDOCTORS_DATA(respond.data.doctors)
+
+      } catch (error) {
+        console.log(error);
+      }
+    };
+
+    loadDoctors();
+  }, []);
+ 
+console.log(DOCTORS_DATA);
 
   return (
     // MAIN LAYOUT
@@ -141,11 +160,14 @@ export default function FindDoctorPage() {
         {/* --- Doctor List --- */}
         <div className="flex flex-col gap-4">
           {DOCTORS_DATA.map((doctor) => (
-             <DoctorCard 
-               key={doctor.id} 
+           
+             doctor.verificationStatus == "verified" ?
+            ( <DoctorCard 
+               key={doctor._id} 
                doctor={doctor} 
                onViewProfile={() => setSelectedDoctor(doctor)} 
-             />
+             /> ): null
+           
           ))}
         </div>
 
@@ -233,4 +255,3 @@ const FilterSelect = ({ label, children }) => (
     </div>
   </div>
 );
-
