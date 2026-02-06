@@ -1,17 +1,50 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
-import { fetchOneDoctor } from '../../server/allApi';
+import { fetchOneDoctor, fetchDoctorSlots, bookAppointment } from '../../server/allApi';
+import { socket } from '../../socket';
+import { jwtDecode } from "jwt-decode";
+import { toast, ToastContainer } from "react-toastify";
+import CustomToast from '../../components/CustomToast';
 
 const AppointmentBooking = () => {
   const { doctorId } = useParams();
-  const [doctor, setDoctor] = useState([]);
+  const [doctor, setDoctor] = useState(null);
   const [loading, setLoading] = useState(true);
-  
+  const [slots, setSlots] = useState([]);
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
+  const [userId, setUserId] = useState(null);
+
+  // Booking confirmation modal state
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [selectedSlot, setSelectedSlot] = useState(null);
+  const [isUrgent, setIsUrgent] = useState(false);
+  const [reason, setReason] = useState('');
+  const [problemNote, setProblemNote] = useState('');
+
+  // --- Helpers ---
+  const minutesToTime = (mins) => {
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const h12 = h % 12 || 12;
+    return `${h12.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')} ${ampm}`;
+  };
+
+  // --- 1. Init User & Doctor ---
   useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      try {
+        const decoded = jwtDecode(token);
+        setUserId(decoded.userId || decoded.id);
+      } catch (e) {
+        console.error("Token decode failed", e);
+      }
+    }
+
     const doctorDetails = async () => {
       try {
         const respond = await fetchOneDoctor(doctorId);
-        console.log(respond)
         setDoctor(respond.data.doctor);
       } catch (error) {
         console.log(error);
@@ -21,47 +54,144 @@ const AppointmentBooking = () => {
     };
     if (doctorId) doctorDetails();
   }, [doctorId]);
-  
- 
 
-  const calendarDates = [
-    { day: "Mon", date: "16", status: "active" },
-    { day: "Tue", date: "17", status: "default" },
-    { day: "Wed", date: "18", status: "default" },
-    { day: "Thu", date: "19", status: "default" },
-    { day: "Fri", date: "20", status: "default" },
-    { day: "Sat", date: "21", status: "disabled" },
-    { day: "Sun", date: "22", status: "disabled" },
-  ];
+  // --- 2. Fetch Slots & Socket Setup ---
+  useEffect(() => {
+    if (!doctorId || !selectedDate) return;
 
-  // Combined Morning & Evening slots into one array
-  const timeSlots = [
-    { time: "09:00 AM", status: "available" },
-    { time: "09:30 AM", status: "hospital_duty" }, // Special status
-    { time: "10:00 AM", status: "selected" },      // Currently selected
-    { time: "10:30 AM", status: "available" },
-    { time: "11:00 AM", status: "available" },
-    { time: "01:30 PM", status: "available" },
-    { time: "02:00 PM", status: "available" },
-    { time: "02:30 PM", status: "hospital_duty" },
-    { time: "03:30 PM", status: "unavailable" },
-    { time: "04:00 PM", status: "available" },
-  ];
+    // Fetch initial slots
+    const loadSlots = async () => {
+      try {
+        const res = await fetchDoctorSlots(doctorId, selectedDate);
+        if (res.data.success) {
+          setSlots(res.data.slots);
+        }
+      } catch (err) {
+        console.error("Failed to load slots", err);
+      }
+    };
+    loadSlots();
 
-  console.log(doctor)
+    // Socket Connection
+    socket.connect();
+
+    // Subscribe to this doctor+date
+    socket.emit('subscribe_to_slots', { doctorId, date: selectedDate });
+
+    // Listen for updates
+    const handleSlotUpdate = (updatedSlot) => {
+      setSlots((prev) =>
+        prev.map((s) => (s._id === updatedSlot.slotId ? { ...s, ...updatedSlot } : s))
+      );
+    };
+
+    socket.on('slot_updated', handleSlotUpdate);
+
+    return () => {
+      socket.emit('unsubscribe_from_slots', { doctorId, date: selectedDate });
+      socket.off('slot_updated', handleSlotUpdate);
+    };
+  }, [doctorId, selectedDate]);
+
+
+  // --- 3. Slot Interaction ---
+  // --- 3. Slot Interaction ---
+  const handleSlotClick = (slot) => {
+    if (!userId) {
+      alert("Please login to book");
+      return;
+    }
+
+    // 1. If I click a slot I ALREADY hold -> Release it (Toggle off)
+    if (slot.status === 'held' && slot.heldBy === userId) {
+      socket.emit('release_hold_slot', {
+        slotId: slot._id,
+        userId,
+        doctorId,
+        date: selectedDate
+      });
+      return;
+    }
+
+    // 2. If I click an available slot
+    if (slot.status === 'available') {
+      // Check if I already hold ANOTHER slot. If yes, release it first.
+      const currentlyHeld = slots.find(s => s.status === 'held' && s.heldBy === userId);
+      if (currentlyHeld) {
+        socket.emit('release_hold_slot', {
+          slotId: currentlyHeld._id,
+          userId,
+          doctorId,
+          date: selectedDate
+        });
+      }
+
+      // Then hold the new one
+      socket.emit('attempt_hold_slot', {
+        slotId: slot._id,
+        userId,
+        doctorId,
+        date: selectedDate
+      }, (response) => {
+        if (!response.success) {
+          alert(response.message);
+        }
+      });
+    }
+  };
+
+  const handleBookAppointment = async () => {
+    if (!userId) {
+      toast(<CustomToast title="Login Required" message="Please login" type="error" />, { closeButton: false, bodyClassName: 'bg-transparent p-0' });
+      return;
+    }
+    const heldSlot = slots.find(s => s.status === 'held' && s.heldBy === userId);
+    if (!heldSlot) return;
+
+    // Open confirmation modal
+    setSelectedSlot(heldSlot);
+    setShowConfirmModal(true);
+  };
+
+  const confirmBooking = async () => {
+    if (!selectedSlot) return;
+
+    try {
+      const res = await bookAppointment({
+        slotId: selectedSlot._id,
+        userId,
+        patientDetails: {
+          isUrgent,
+          reason,
+          notes: problemNote
+        }
+      });
+      if (res.data.success) {
+        toast(<CustomToast title="Success" message="Booking Confirmed!" type="success" />, { closeButton: false, bodyClassName: 'bg-transparent p-0' });
+        setShowConfirmModal(false);
+        setIsUrgent(false);
+        setReason('');
+        setProblemNote('');
+        setSelectedSlot(null);
+      }
+    } catch (err) {
+      console.error(err);
+      toast(<CustomToast title="Booking Failed" message={err.response?.data?.message || "Booking Failed"} type="error" />, { closeButton: false, bodyClassName: 'bg-transparent p-0' });
+    }
+  };
+
+  if (loading || !doctor) return <div className="p-10 text-center">Loading Doctor Profile...</div>;
 
   return (
     <div className="bg-white dark:bg-background-dark text-med-dark dark:text-white font-display overflow-x-hidden transition-colors duration-200">
       <div className="relative flex min-h-screen w-full flex-col">
-        
-        <main className="layout-container flex grow justify-center w-full max-w-[1200px] mx-auto px-4 lg:px-5     py-8">
+
+        <main className="layout-container flex grow justify-center w-full max-w-[1200px] mx-auto px-4 lg:px-5 py-8">
           <div className="flex flex-col lg:flex-row gap-8 w-full">
-            
+
             {/* --- Left Sidebar: Doctor Profile --- */}
             <aside className="w-full lg:w-80 shrink-0">
               <div className="bg-white dark:bg-[#1a2c2c] rounded-2xl p-6 shadow-sm border border-[#e5e7eb] dark:border-[#2a3838] sticky top-[100px]">
-                
-                {/* Profile Header */}
                 <div className="flex flex-col items-center text-center mb-6">
                   <div className="relative mb-4">
                     <div className="size-24 rounded-full border-4 border-primary/20 overflow-hidden">
@@ -70,42 +200,20 @@ const AppointmentBooking = () => {
                         style={{ backgroundImage: `url("${doctor.profileImage}")` }}
                       ></div>
                     </div>
-                    {doctor.isVerified && (
-                      <div className="absolute bottom-1 right-1 bg-white dark:bg-[#1a2c2c] rounded-full p-1 shadow-sm border border-gray-100 dark:border-gray-800">
-                        <span className="material-symbols-outlined text-primary fill text-[18px]">verified</span>
-                      </div>
-                    )}
                   </div>
                   <h2 className="text-xl font-bold text-med-dark dark:text-white">{doctor.displayName}</h2>
-                  <p className="text-sm text-med-text-secondary dark:text-gray-400 font-medium">{doctor.role}</p>
-                  <div className="flex items-center gap-1 mt-2">
-                    <span className="material-symbols-outlined text-yellow-400 fill text-[18px]">star</span>
-                    <span className="text-sm font-bold text-med-dark dark:text-white">{doctor.rating}</span>
-                    <span className="text-xs text-med-text-secondary dark:text-gray-500">({doctor.reviews} Reviews)</span>
-                  </div>
+                  <p className="text-sm text-med-text-secondary dark:text-gray-400 font-medium">{doctor.specialization}</p>
                 </div>
-
-                {/* Profile Details */}
+                {/* ... (Static profile details kept simple) ... */}
                 <div className="space-y-4 pt-4 border-t border-med-gray dark:border-[#2a3838]">
-                  <div>
-                    <h4 className="text-[10px] font-bold uppercase tracking-wider text-med-text-secondary dark:text-gray-500 mb-1">Experience</h4>
-                    <p className="text-sm text-med-dark dark:text-gray-300 font-medium">{doctor.experienceYears}</p>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-500">Experience</span>
+                    <span className="text-sm font-bold text-primary">{doctor.experienceYears} years</span>
                   </div>
-                  <div>
-                    <h4 className="text-[10px] font-bold uppercase tracking-wider text-med-text-secondary dark:text-gray-500 mb-1">Hospital</h4>
-                    <p className="text-sm text-med-dark dark:text-gray-300 font-medium">N/A</p>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-500">Consultation Fee</span>
+                    <span className="text-sm font-bold text-primary">₹{doctor.consultationFee}</span>
                   </div>
-                  <div>
-                    <h4 className="text-[10px] font-bold uppercase tracking-wider text-med-text-secondary dark:text-gray-500 mb-1">Consultation Fee</h4>
-                    <p className="text-sm text-med-dark dark:text-gray-300 font-medium font-bold text-primary">{doctor.fee}</p>
-                  </div>
-                </div>
-
-                <div className="mt-6">
-                  <a className="text-xs font-bold text-primary hover:underline flex items-center justify-center gap-1" href="#">
-                    <span className="material-symbols-outlined text-sm">visibility</span>
-                    View Detailed Profile
-                  </a>
                 </div>
               </div>
             </aside>
@@ -113,137 +221,157 @@ const AppointmentBooking = () => {
             {/* --- Right Content: Booking Area --- */}
             <div className="flex-1">
               <div className="mb-6">
-                <button className="flex items-center text-sm text-med-text-secondary hover:text-primary transition-colors mb-2">
-                  <span className="material-symbols-outlined text-lg">chevron_left</span>
-                  Back to Profile
-                </button>
                 <h1 className="text-2xl font-bold text-med-dark dark:text-white">Select Appointment Slots</h1>
-                <p className="text-med-text-secondary dark:text-gray-400 mt-1">Available slots based on {doctor.displayName}'s schedule</p>
+                <p className="text-med-text-secondary dark:text-gray-400 mt-1">
+                  Date: <input
+                    type="date"
+                    value={selectedDate}
+                    onChange={(e) => setSelectedDate(e.target.value)}
+                    className="bg-transparent border border-gray-300 dark:border-gray-700 rounded px-2 py-1 ml-2 text-sm"
+                  />
+                </p>
               </div>
 
               <div className="bg-white dark:bg-[#1a2c2c] rounded-2xl shadow-sm border border-[#e5e7eb] dark:border-[#2a3838] overflow-hidden mb-8">
-                
-                {/* Calendar Navigation */}
-                <div className="flex items-center justify-between p-4 border-b border-med-gray dark:border-[#2a3838]">
-                  <div className="flex items-center gap-3">
-                    <button className="p-2 rounded-full hover:bg-med-gray dark:hover:bg-[#253636] transition-colors">
-                      <span className="material-symbols-outlined">arrow_back_ios</span>
-                    </button>
-                    <h3 className="font-bold text-med-dark dark:text-white">October 2023</h3>
-                    <button className="p-2 rounded-full hover:bg-med-gray dark:hover:bg-[#253636] transition-colors">
-                      <span className="material-symbols-outlined">arrow_forward_ios</span>
-                    </button>
-                  </div>
-                  <div className="flex items-center gap-2 bg-primary/10 px-3 py-1.5 rounded-full border border-primary/20">
-                    <span className="material-symbols-outlined text-primary text-sm">event_note</span>
-                    <span className="text-xs font-bold text-med-dark dark:text-primary uppercase tracking-tight">Slots updated weekly</span>
-                  </div>
-                </div>
 
-                {/* Calendar Days Grid */}
-                <div className="grid grid-cols-7 gap-px bg-med-gray dark:bg-[#2a3838] p-4">
-                  {calendarDates.map((item, index) => (
-                    <div 
-                      key={index}
-                      className={`flex flex-col items-center gap-1 p-2 rounded-xl transition-colors cursor-pointer
-                        ${item.status === 'active' 
-                          ? 'bg-primary text-med-dark shadow-md' 
-                          : item.status === 'disabled'
-                            ? 'opacity-40 cursor-not-allowed'
-                            : 'hover:bg-med-gray dark:hover:bg-[#253636] text-med-dark dark:text-white'
-                        }`}
-                    >
-                      <span className={`text-[10px] font-bold uppercase ${item.status === 'active' ? '' : 'text-med-text-secondary'}`}>{item.day}</span>
-                      <span className="text-lg font-bold">{item.date}</span>
-                      {item.status === 'active' && <span className="size-1 bg-med-dark rounded-full"></span>}
-                    </div>
-                  ))}
-                </div>
-
-                {/* --- SINGLE SLOTS SECTION (Merged) --- */}
+                {/* Slots Grid */}
                 <div className="p-6">
-                  <div className="mb-4">
-                    <div className="flex items-center gap-2 mb-4">
-                      <span className="material-symbols-outlined text-med-text-secondary">schedule</span>
-                      <h4 className="font-bold text-med-dark dark:text-white">Available Slots</h4>
-                    </div>
-                    
+                  {slots.length === 0 ? (
+                    <div className="text-center py-10 text-gray-400">No slots available for this date.</div>
+                  ) : (
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-                      {timeSlots.map((slot, index) => {
-                        // Logic to render different button styles based on status
-                        if (slot.status === 'available') {
-                          return (
-                            <button key={index} className="py-2.5 px-4 rounded-xl border border-med-gray dark:border-[#2a3838] text-sm font-semibold hover:border-primary hover:bg-primary/5 transition-all text-med-dark dark:text-white">
-                              {slot.time}
-                            </button>
-                          );
-                        } else if (slot.status === 'selected') {
-                          return (
-                            <button key={index} className="py-2.5 px-4 rounded-xl border-2 border-primary bg-primary/10 text-med-dark dark:text-white text-sm font-bold shadow-sm">
-                              {slot.time}
-                            </button>
-                          );
+                      {slots.map((slot) => {
+                        const isMyHold = slot.status === 'held' && slot.heldBy === userId;
+                        const isAvailable = slot.status === 'available';
+
+                        let btnClass = "py-2.5 px-4 rounded-xl border text-sm font-semibold transition-all ";
+
+                        if (isMyHold) {
+                          btnClass += "border-primary bg-primary/10 text-primary shadow-sm"; // Selected
+                        } else if (isAvailable) {
+                          btnClass += "border-med-gray dark:border-[#2a3838] hover:border-primary hover:bg-primary/5 text-med-dark dark:text-white"; // Available
                         } else {
-                          // For hospital duty / unavailable
-                          const label = slot.status === 'hospital_duty' ? 'Hospital Duty' : 'Not Available';
-                          return (
-                            <div key={index} className="relative group">
-                              <button className="w-full py-2.5 px-4 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800 text-med-text-secondary/50 cursor-not-allowed text-sm font-medium">
-                                {slot.time}
-                              </button>
-                              <span className="absolute -top-2 -right-1 px-1.5 py-0.5 bg-gray-400 dark:bg-gray-600 text-[8px] font-bold text-white rounded-md uppercase">
-                                {label}
-                              </span>
-                            </div>
-                          );
+                          btnClass += "bg-gray-50 dark:bg-gray-800/50 border-gray-100 dark:border-gray-800 text-med-text-secondary/50 cursor-not-allowed"; // Taken/Held by others
                         }
+
+                        return (
+                          <button
+                            key={slot._id}
+                            onClick={() => handleSlotClick(slot)}
+                            disabled={!isAvailable && !isMyHold}
+                            className={btnClass}
+                          >
+                            {minutesToTime(slot.startMin)}
+                            {isMyHold && <span className="block text-[9px] uppercase">Selected</span>}
+                            {!isAvailable && !isMyHold && <span className="block text-[9px] uppercase">{slot.status}</span>}
+                          </button>
+                        );
                       })}
                     </div>
-                  </div>
+                  )}
                 </div>
 
-                {/* Footer of Booking Card */}
+                {/* Footer */}
                 <div className="bg-primary/5 dark:bg-primary/10 p-6 border-t border-[#e5e7eb] dark:border-[#2a3838]">
                   <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-                    <div className="flex items-center gap-4">
-                      <div className="p-3 bg-white dark:bg-[#1a2c2c] rounded-xl border border-primary/30">
-                        <span className="material-symbols-outlined text-primary">event_available</span>
-                      </div>
-                      <div>
-                        <p className="text-xs text-med-text-secondary dark:text-gray-400 font-medium">Selected Slot</p>
-                        <p className="font-bold text-med-dark dark:text-white">Monday, Oct 16 • 10:00 AM</p>
-                      </div>
-                    </div>
-                    <button className="w-full md:w-auto px-10 py-4 bg-primary hover:bg-primary/90 text-med-dark font-bold rounded-xl transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2">
+                    <p className="text-sm text-gray-500">
+                      {slots.find(s => s.status === 'held' && s.heldBy === userId)
+                        ? "Slot selected. Proceed to book."
+                        : "Please select a slot."}
+                    </p>
+                    <button
+                      onClick={handleBookAppointment}
+                      disabled={!slots.find(s => s.status === 'held' && s.heldBy === userId)}
+                      className="px-10 py-4 bg-primary hover:bg-primary/90 text-med-dark font-bold rounded-xl transition-all shadow-lg shadow-primary/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
                       Book Appointment
-                      <span className="material-symbols-outlined">chevron_right</span>
                     </button>
                   </div>
                 </div>
-              </div>
 
-              {/* Info Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="p-4 rounded-xl border border-dashed border-[#e5e7eb] dark:border-[#2a3838] flex items-center gap-3">
-                  <span className="material-symbols-outlined text-primary">history_edu</span>
-                  <div>
-                    <h5 className="text-sm font-bold text-med-dark dark:text-white">Insurance Accepted</h5>
-                    <p className="text-xs text-med-text-secondary">BlueShield, UnitedHealth, +5 more</p>
-                  </div>
-                </div>
-                <div className="p-4 rounded-xl border border-dashed border-[#e5e7eb] dark:border-[#2a3838] flex items-center gap-3">
-                  <span className="material-symbols-outlined text-primary">video_camera_front</span>
-                  <div>
-                    <h5 className="text-sm font-bold text-med-dark dark:text-white">Video Consult</h5>
-                    <p className="text-xs text-med-text-secondary">Secure end-to-end encrypted calls</p>
-                  </div>
-                </div>
               </div>
-
             </div>
           </div>
         </main>
       </div>
+
+      {/* Booking Confirmation Modal */}
+      {showConfirmModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowConfirmModal(false)}>
+          <div className="bg-white dark:bg-[#1a2c2c] rounded-2xl p-6 max-w-md w-full mx-4 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-2xl font-bold text-med-dark dark:text-white mb-4">Confirm Booking</h2>
+
+            <div className="space-y-4">
+              {/* Urgency Checkbox */}
+              <div className="flex items-center gap-3 p-3 bg-red-50 dark:bg-red-900/10 rounded-xl border border-red-200 dark:border-red-800">
+                <input
+                  type="checkbox"
+                  id="urgent"
+                  checked={isUrgent}
+                  onChange={(e) => setIsUrgent(e.target.checked)}
+                  className="w-5 h-5 rounded border-gray-300 text-red-600 focus:ring-red-500"
+                />
+                <label htmlFor="urgent" className="text-sm font-medium text-red-700 dark:text-red-300 cursor-pointer flex items-center gap-2">
+                  <span className="material-symbols-outlined text-[20px]">warning</span>
+                  Mark as Urgent
+                </label>
+              </div>
+
+              {/* Reason Dropdown */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Reason for Visit</label>
+                <select
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  className="w-full px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#1f3333] focus:border-primary focus:outline-none"
+                >
+                  <option value="">Select reason...</option>
+                  <option value="Consultation">General Consultation</option>
+                  <option value="Follow-up">Follow-up Visit</option>
+                  <option value="Emergency">Emergency</option>
+                  <option value="Check-up">Routine Check-up</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+
+              {/* Problem Note */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Problem Description</label>
+                <textarea
+                  value={problemNote}
+                  onChange={(e) => setProblemNote(e.target.value)}
+                  placeholder="Briefly describe your symptoms or reason for visit..."
+                  rows={4}
+                  className="w-full px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#1f3333] focus:border-primary focus:outline-none resize-none"
+                />
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-3 mt-6">
+                <button
+                  onClick={() => setShowConfirmModal(false)}
+                  className="flex-1 px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmBooking}
+                  className="flex-1 px-4 py-2 rounded-xl bg-primary text-white font-bold hover:bg-primary/90 transition"
+                >
+                  Confirm Booking
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <ToastContainer
+        position="bottom-right"
+        theme="colored"
+        toastClassName="!bg-transparent !shadow-none !p-0"
+        bodyClassName="!bg-transparent !p-0"
+      />
     </div>
   );
 };

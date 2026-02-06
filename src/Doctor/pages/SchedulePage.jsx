@@ -1,99 +1,259 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import TimelineSlot from "../components/TimelineSlot";
 import NewAppointmentModal from "../components/NewAppointmentModal";
-import { useState } from "react";
-const SCHEDULE_ITEMS = [
-  {
-    time: "08:00 AM",
-    type: "blocked",
-    title: "Hospital Rounds",
-    subtitle: "General Ward • Unavailable for MedPulse",
-    icon: "local_hospital"
-  },
-  {
-    time: "09:00 AM",
-    type: "appointment",
-    patientName: "Sarah Jenkins",
-    avatar: "https://lh3.googleusercontent.com/aida-public/AB6AXuBi8W3-YiMtFpj3gRq16WKGyhQYEL3CHKXPfCYawWvhIMJqnwB1YzgV0YsmO-cs2vV1L7HOxhF6Up4HkG529VthdmlVNOghA-us3fSl3ScynXd8uak9H7twE_3oi8CJnkHcguBRYk735MlE3PQjK47YEUmCIsvoKu8acpN4z7KVWOdxUMLBqq3ddnjnZqqyNqi1NBMcoVPX2cCXrEjpstp263OR4JZeUzqyzdIoyTz1h9i7jqndCsnp3FNnvPxYCMq-Z9Vkc_ZUWw4",
-    status: "Paid",
-    statusColor: "green",
-    note: "New Consultation • Migraine",
-    mode: "Video Call",
-    modeIcon: "videocam"
-  },
-  {
-    time: "10:00 AM",
-    type: "open",
-    title: "Open Slot (Defined)",
-  },
-  {
-    time: "11:00 AM",
-    type: "appointment",
-    patientName: "Michael Torres",
-    avatar: "https://lh3.googleusercontent.com/aida-public/AB6AXuDkDHRXUwIu3w0Y5ZUjyTU6uTTi17UxMc4fUqaRCeQc3FT8IA9dRQ9_gvz3RSV-oUWUAnAnVix05uqS5dwVZXed7IKSxa7IicFip6D0F9q8vLUI0y7Rr6hXgToLbA8muwehjl2e7XxNc9eCIo7qsmXzFifFkJl1Xm0FYSDqVdZbFaBR6DdsU8AJ3gRy8Nve9VenuMtQ7DVq4hFNIVUTBYC-JtkPqtOhnxxi7w7q7Aju8RFir6P7CWhzJr8-_6o8LenHypOZOYh6fIo",
-    status: "Payment Pending",
-    statusColor: "amber",
-    note: "Urgent Follow-up • Chest Pain",
-    mode: "In-Person",
-    modeIcon: "apartment",
-    isUrgent: true
-  },
-  {
-    time: "12:00 PM",
-    type: "break",
-    title: "Personal Time • Lunch",
-    icon: "coffee"
-  },
-  {
-    time: "01:00 PM",
-    type: "appointment",
-    patientName: "Emma Wilson",
-    avatar: "https://lh3.googleusercontent.com/aida-public/AB6AXuBK-jFQBFUOlmC2PaQExtqTgFg9C2HZ8QA2sxgsYj7jLd655ZBUtFGCeyp8jzUButqbEqM-3PnJn6r5muTREW9h72pDht9xQZstW2-ifzyMRBGg7_Sqoe41VdZzEeXFYMX8szwvjWbB7VREaprb-c_Dag0mu2BRO5UCoFR3crU43sWfaiXxva7OLQP-6GjRuNZLbmpnvQ9UsxOHSLahprWaBNHoD3PvBSkU7ZUKy5w7MGydK3zzHpa-kD6KG68h9lXt_TZoLeR9jyw",
-    status: "Paid",
-    statusColor: "green",
-    note: "Routine Checkup",
-    mode: "In-Person",
-    modeIcon: "apartment"
-  },
-  {
-    time: "02:00 PM",
-    type: "open",
-    title: "Open Slot (Defined)",
-  },
-  {
-    time: "03:00 PM",
-    type: "blocked",
-    title: "Hospital Duty - Surgery",
-    subtitle: "Operating Theatre • Until 06:00 PM",
-    icon: "local_hospital"
-  }
-];
-export default function SchedulePage() {
-  const [isOpen, setIsOpen] = useState(true);
+import { createDoctorSlots, fetchDoctorSlots, getDoctorProfile, toggleSlotBlock, cancelBooking, editBooking, getUpcomingAppointments, getAvailableDates } from "../../server/allApi";
+import { jwtDecode } from "jwt-decode";
+import { toast, ToastContainer } from "react-toastify";
+import CustomToast from "../../components/CustomToast";
+
+const SchedulePage = () => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [isDefineOpen, setIsDefineOpen] = useState(false);
+  const [doctorId, setDoctorId] = useState(null);
+
+  // View Mode: 'timeline' or 'upcoming'
+  const [viewMode, setViewMode] = useState('timeline');
+  const [upcomingList, setUpcomingList] = useState([]);
+
+  // Edit Modal State
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editingSlot, setEditingSlot] = useState(null);
+  const [editNotes, setEditNotes] = useState("");
+
+  // Available Dates & Loading
+  const [availableDates, setAvailableDates] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  // Define Availability State
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [startTime, setStartTime] = useState("09:00");
+  const [endTime, setEndTime] = useState("17:00");
+  const [durationMin, setDurationMin] = useState(30);
+
+  // Timeline Data
+  const [timelineItems, setTimelineItems] = useState([]);
+
+  useEffect(() => {
+    // Get Doctor ID from Profile and Available Dates
+    const loadProfile = async () => {
+      try {
+        const res = await getDoctorProfile();
+        if (res.data.success) {
+          const docId = res.data.DoctorProfile._id;
+          setDoctorId(docId);
+
+          // Fetch available dates
+          const datesRes = await getAvailableDates(docId);
+          if (datesRes.data.success) {
+            setAvailableDates(datesRes.data.dates);
+
+            // Set default date: today if it has schedules, else first available date
+            const today = new Date().toISOString().split('T')[0];
+            const hasToday = datesRes.data.dates.some(d => d.date === today);
+
+            if (hasToday) {
+              setDate(today);
+            } else if (datesRes.data.dates.length > 0) {
+              setDate(datesRes.data.dates[0].date);
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Failed to load doctor profile", error);
+        toast(<CustomToast title="Profile Error" message="Could not load profile. Please complete profile setup." type="error" />, { closeButton: false, bodyClassName: 'bg-transparent p-0' });
+      }
+    };
+    loadProfile();
+  }, []);
+
+  // Fetch Slots when date changes or after creation
+  const fetchSlots = async () => {
+    if (!doctorId) return;
+
+    setLoading(true);
+    try {
+      const res = await fetchDoctorSlots(doctorId, date);
+      if (res.data.success) {
+        // Transform slots to timeline items
+        const items = res.data.slots.map(slot => ({
+          id: slot._id, // IMPORTANT: Backend ID
+          time: minutesToTime(slot.startMin),
+          type: slot.status === 'available' ? 'open' : slot.status === 'booked' ? 'appointment' : 'blocked',
+          title: slot.status === 'available' ? 'Open Slot' : slot.status,
+          subtitle: `${slot.durationMin} mins`,
+          status: slot.status,
+          patientName: slot.booking?.user?.username,
+          patientEmail: slot.booking?.user?.email,
+          note: slot.booking?.notes,
+          isUrgent: slot.booking?.isUrgent,
+          reason: slot.booking?.reason
+        }));
+        setTimelineItems(items);
+      }
+    } catch (err) {
+      console.error("Error fetching slots", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchUpcoming = async () => {
+    if (!doctorId) return;
+    try {
+      const res = await getUpcomingAppointments();
+      if (res.data.success) {
+        setUpcomingList(res.data.slots);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  useEffect(() => {
+    if (viewMode === 'timeline') {
+      fetchSlots();
+    } else {
+      fetchUpcoming();
+    }
+  }, [date, doctorId, viewMode]);
+
+
+  const handleCreateSlots = async () => {
+    try {
+      const res = await createDoctorSlots({
+        date,
+        startTime,
+        endTime,
+        durationMin
+      });
+      if (res.data.success) {
+        toast(<CustomToast title="Success" message="Availability created successfully!" type="success" />, { closeButton: false, bodyClassName: 'bg-transparent p-0' });
+        setIsDefineOpen(false);
+
+        // Refresh available dates
+        const datesRes = await getAvailableDates(doctorId);
+        if (datesRes.data.success) {
+          setAvailableDates(datesRes.data.dates);
+        }
+
+        fetchSlots(); // Refresh timeline
+      }
+    } catch (err) {
+      toast(<CustomToast title="Error" message={err.response?.data?.message || "Failed to create slots"} type="error" />, { closeButton: false, bodyClassName: 'bg-transparent p-0' });
+    }
+  };
+
+  const handleSlotAction = async (action, slotData) => {
+    try {
+      if (action === 'block' || action === 'unblock') {
+        await toggleSlotBlock({ slotId: slotData.id });
+        toast(<CustomToast title="Success" message={action === 'block' ? "Slot Blocked" : "Slot Unblocked"} type="success" />, { closeButton: false, bodyClassName: 'bg-transparent p-0' });
+        fetchSlots();
+      } else if (action === 'cancel') {
+        if (!window.confirm("Are you sure you want to cancel this appointment?")) return;
+        await cancelBooking({ slotId: slotData.id });
+        toast(<CustomToast title="Cancelled" message="Appointment Cancelled" type="success" />, { closeButton: false, bodyClassName: 'bg-transparent p-0' });
+        if (viewMode === 'timeline') fetchSlots(); else fetchUpcoming();
+      } else if (action === 'edit') {
+        setEditingSlot(slotData);
+        setEditNotes(slotData.note || "");
+        setIsEditOpen(true);
+      }
+
+    } catch (err) {
+      console.error(err);
+      toast(<CustomToast title="Error" message="Action failed" type="error" />, { closeButton: false, bodyClassName: 'bg-transparent p-0' });
+    }
+  };
+
+  const handleEditSubmit = async () => {
+    try {
+      await editBooking({ slotId: editingSlot.id, notes: editNotes });
+      toast(<CustomToast title="Success" message="Notes Updated" type="success" />, { closeButton: false, bodyClassName: 'bg-transparent p-0' });
+      setIsEditOpen(false);
+      setEditingSlot(null);
+      if (viewMode === 'timeline') fetchSlots(); else fetchUpcoming();
+    } catch (err) {
+      toast(<CustomToast title="Error" message="Update failed" type="error" />, { closeButton: false, bodyClassName: 'bg-transparent p-0' });
+    }
+  };
+
+  const minutesToTime = (mins) => {
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const h12 = h % 12 || 12;
+    return `${h12.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')} ${ampm}`;
+  };
 
   return (
     <div className="bg-white dark:bg-[#1a2c2c] text-[#111818] dark:text-white font-display transition-colors duration-200 h-screen w-full flex flex-col">
-      <NewAppointmentModal onClose={()=>setIsOpen(!isOpen)} isOpen={!isOpen}/>
-      {/* Mobile Header */}
-      <header className="lg:hidden flex items-center justify-between p-4 bg-surface-light dark:bg-surface-dark border-b border-[#dbe6e6] dark:border-[#2a3c3c]">
-        <div className="flex items-center gap-2">
-          <div className="size-8 rounded-lg bg-primary flex items-center justify-center text-white">
-            <span className="material-symbols-outlined text-[20px]">cardiology</span>
+      <ToastContainer position="top-right" theme="colored" />
+      <NewAppointmentModal onClose={() => setIsOpen(false)} isOpen={isOpen} />
+
+      {/* Define Availability Modal */}
+      {isDefineOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white dark:bg-[#1f3333] p-6 rounded-2xl w-full max-w-md shadow-xl border border-gray-200 dark:border-gray-700">
+            <h2 className="text-xl font-bold mb-4">Define Availability</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Date</label>
+                <input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full p-2 rounded border dark:bg-[#152626] dark:border-gray-600" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Start Time</label>
+                  <input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} className="w-full p-2 rounded border dark:bg-[#152626] dark:border-gray-600" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">End Time</label>
+                  <input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} className="w-full p-2 rounded border dark:bg-[#152626] dark:border-gray-600" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Duration (mins)</label>
+                <select value={durationMin} onChange={e => setDurationMin(Number(e.target.value))} className="w-full p-2 rounded border dark:bg-[#152626] dark:border-gray-600">
+                  <option value={15}>15 mins</option>
+                  <option value={30}>30 mins</option>
+                  <option value={60}>60 mins</option>
+                </select>
+              </div>
+              <div className="flex justify-end gap-3 mt-4">
+                <button onClick={() => setIsDefineOpen(false)} className="px-4 py-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800">Cancel</button>
+                <button onClick={handleCreateSlots} className="px-4 py-2 rounded-lg bg-primary text-white font-bold hover:bg-primary/90">Create Slots</button>
+              </div>
+            </div>
           </div>
-          <span className="font-bold text-lg dark:text-white">MedPulse</span>
         </div>
-        <button className="p-2 text-[#111818] dark:text-white">
-          <span className="material-symbols-outlined">menu</span>
-        </button>
-      </header>
+      )}
+
+      {/* Edit Notes Modal */}
+      {isEditOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white dark:bg-[#1f3333] p-6 rounded-2xl w-full max-w-md shadow-xl border border-gray-200 dark:border-gray-700">
+            <h3 className="text-lg font-bold mb-4">Edit Appointment Notes</h3>
+            <textarea
+              className="w-full h-32 p-3 rounded-lg border dark:bg-[#152626] dark:border-gray-600"
+              value={editNotes}
+              onChange={(e) => setEditNotes(e.target.value)}
+              placeholder="Enter new notes here..."
+            />
+            <div className="flex justify-end gap-3 mt-4">
+              <button onClick={() => setIsEditOpen(false)} className="px-4 py-2 text-gray-500 hover:bg-gray-100 rounded-lg">Cancel</button>
+              <button onClick={handleEditSubmit} className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90">Save Changes</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Main Content Layout */}
-      <main className="flex-1 flex overflow-hidden bg-white">
-        
+      <main className="flex-1 flex overflow-hidden bg-white dark:bg-[#1a2c2c]">
+
         {/* --- LEFT SCROLLABLE AREA (Schedule) --- */}
-        <div className="flex-1 overflow-y-auto p-4 md:p-8 lg:px-6 lg:py-6   dark:bg-[#1a2c2c]  scrollbar-hide bg-white">
+        <div className="flex-1 overflow-y-auto p-4 md:p-8 lg:px-6 lg:py-6 scrollbar-hide">
           <div className="mx-auto max-w-7xl flex flex-col gap-6">
-            
+
             {/* Header Controls */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
@@ -101,151 +261,106 @@ export default function SchedulePage() {
                 <p className="text-secondary dark:text-gray-400 text-sm mt-1">Manage availability, appointments, and hospital shifts.</p>
               </div>
               <div className="flex flex-col sm:flex-row gap-3">
-                <div className="flex items-center bg-white dark:bg-[#152626] rounded-xl border border-[#dbe6e6] dark:border-[#2a3c3c] p-1 shadow-sm">
-                  <button className="px-3 py-1.5 rounded-lg text-sm font-semibold bg-[#f0f4f4] dark:bg-[#2a3c3c] text-[#111818] dark:text-white">Day</button>
-                  <button className="px-3 py-1.5 rounded-lg text-sm font-medium text-secondary dark:text-gray-400 hover:text-[#111818] dark:hover:text-white transition-colors">Week</button>
-                  <button className="px-3 py-1.5 rounded-lg text-sm font-medium text-secondary dark:text-gray-400 hover:text-[#111818] dark:hover:text-white transition-colors">Month</button>
+                <div className="flex bg-gray-100 dark:bg-[#1f3333] p-1 rounded-xl">
+                  <button
+                    onClick={() => setViewMode('timeline')}
+                    className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${viewMode === 'timeline' ? 'bg-white dark:bg-[#2a3c3c] shadow-sm text-primary' : 'text-gray-500'}`}
+                  >
+                    Daily Timeline
+                  </button>
+                  <button
+                    onClick={() => setViewMode('upcoming')}
+                    className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${viewMode === 'upcoming' ? 'bg-white dark:bg-[#2a3c3c] shadow-sm text-primary' : 'text-gray-500'}`}
+                  >
+                    Upcoming All
+                  </button>
                 </div>
-                <button className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-[#dbe6e6] bg-white text-secondary dark:bg-[#1f3333] dark:border-[#2a3c3c] dark:text-gray-300 font-bold shadow-sm hover:bg-gray-50 dark:hover:bg-[#2a3c3c] transition-all">
+                <button onClick={() => setIsDefineOpen(true)} className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-[#dbe6e6] bg-white text-secondary dark:bg-[#1f3333] dark:border-[#2a3c3c] dark:text-gray-300 font-bold shadow-sm hover:bg-gray-50 dark:hover:bg-[#2a3c3c] transition-all">
                   <span className="material-symbols-outlined text-[20px]">edit_calendar</span>
                   Define Availability
                 </button>
-                <button onClick={()=>setIsOpen(!isOpen)} className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-[#085555] font-bold shadow-md shadow-primary/20 hover:bg-[#0ebdbd] hover:text-white transition-all">
-                  <span className="material-symbols-outlined " >add</span>
-                  New Appointment
-                </button>
               </div>
             </div>
 
-            {/* Split Grid */}
-            <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 h-full items-start">
-              
-              {/* Timeline Column */}
-              <div className="xl:col-span-8 flex flex-col gap-4">
-                
-                {/* Date Navigator */}
-                <div className="flex items-center justify-between bg-surface-light dark:bg-surface-dark p-4 rounded-2xl border border-[#dbe6e6] dark:border-[#2a3c3c] shadow-sm">
-                  <div className="flex items-center gap-2">
-                    <button className="size-8 flex items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-[#2a3c3c] text-secondary dark:text-gray-400 transition-colors">
-                      <span className="material-symbols-outlined">chevron_left</span>
-                    </button>
-                    <div className="flex items-center gap-2 px-2">
-                      <span className="material-symbols-outlined text-primary">calendar_today</span>
-                      <span className="text-lg font-bold text-[#111818] dark:text-white">October 24, 2023</span>
-                      <span className="text-sm font-medium text-secondary dark:text-gray-500 bg-gray-100 dark:bg-[#2a3c3c] px-2 py-0.5 rounded text-center">Today</span>
-                    </div>
-                    <button className="size-8 flex items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-[#2a3c3c] text-secondary dark:text-gray-400 transition-colors">
-                      <span className="material-symbols-outlined">chevron_right</span>
-                    </button>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-1.5">
-                      <span className="size-2 rounded-full bg-gray-300 dark:bg-gray-600"></span>
-                      <span className="text-xs font-medium text-secondary dark:text-gray-400">Hospital</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="size-2 rounded-full bg-primary"></span>
-                      <span className="text-xs font-medium text-secondary dark:text-gray-400">MedPulse</span>
-                    </div>
-                  </div>
+            {/* Timeline Container */}
+            <div className="flex flex-col gap-4">
+
+              {/* Current Date Display (Only for Timeline) */}
+              {viewMode === 'timeline' && (
+                <div className="flex flex-col gap-2 mb-4">
+                  <label className="text-sm font-medium text-gray-600 dark:text-gray-400">Select Date</label>
+                  <select
+                    value={date}
+                    onChange={(e) => setDate(e.target.value)}
+                    disabled={loading}
+                    className="px-4 py-2 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1f3333] font-bold text-base focus:border-primary focus:outline-none transition-colors disabled:opacity-50"
+                  >
+                    {availableDates.length === 0 ? (
+                      <option value="">No schedules available</option>
+                    ) : (
+                      availableDates.map((dateInfo) => (
+                        <option key={dateInfo.date} value={dateInfo.date}>
+                          {dateInfo.date} - {dateInfo.available}/{dateInfo.total} slots available
+                        </option>
+                      ))
+                    )}
+                  </select>
                 </div>
+              )}
 
-                {/* Timeline Container */}
-                <div className="flex flex-col bg-surface-light dark:bg-surface-dark rounded-2xl border border-[#dbe6e6] dark:border-[#2a3c3c] shadow-card relative overflow-hidden min-h-[600px]">
-                  {/* Subtle Grid Lines Background */}
-                   
-                  <div className="p-6 flex flex-col gap-0 relative z-10">
-                    {/* Render Timeline Items */}
-                    {SCHEDULE_ITEMS.map((item, index) => (
-                      <TimelineSlot key={index} data={item} />
-                    ))}
-                  </div>
-                </div>
-              </div>
+              <div className="flex flex-col bg-surface-light dark:bg-surface-dark rounded-2xl border border-[#dbe6e6] dark:border-[#2a3c3c] shadow-card relative overflow-hidden min-h-[600px]">
+                <div className="p-6 flex flex-col gap-0 relative z-10">
 
-              {/* --- RIGHT SIDEBAR (Fixed/Sticky) --- */}
-              <div className="xl:col-span-4 flex flex-col gap-6 xl:sticky xl:top-4 xl:h-fit xl:max-h-[calc(100vh-2rem)] xl:overflow-y-auto [&::-webkit-scrollbar]:hidden">
-                
-                {/* 1. Mini Calendar Widget */}
-                <div className="bg-surface-light dark:bg-surface-dark p-6 rounded-2xl border border-[#dbe6e6] dark:border-[#2a3c3c] shadow-soft">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-bold text-[#111818] dark:text-white">October 2023</h3>
-                    <div className="flex gap-1">
-                      <button className="p-1 hover:bg-gray-100 dark:hover:bg-[#2a3c3c] rounded text-secondary"><span className="material-symbols-outlined text-[20px]">chevron_left</span></button>
-                      <button className="p-1 hover:bg-gray-100 dark:hover:bg-[#2a3c3c] rounded text-secondary"><span className="material-symbols-outlined text-[20px]">chevron_right</span></button>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-7 gap-1 text-center mb-2">
-                    {['Su','Mo','Tu','We','Th','Fr','Sa'].map(d => (
-                      <span key={d} className="text-xs font-medium text-secondary/50 dark:text-gray-500">{d}</span>
-                    ))}
-                  </div>
-                  <div className="grid grid-cols-7 gap-1 text-center text-sm">
-                    <span className="p-2 text-gray-300 dark:text-gray-600">29</span>
-                    <span className="p-2 text-gray-300 dark:text-gray-600">30</span>
-                    {[...Array(23)].map((_, i) => (
-                      <span key={i} className="p-2 hover:bg-gray-50 dark:hover:bg-[#2a3c3c] rounded-lg cursor-pointer text-[#111818] dark:text-white">{i + 1}</span>
-                    ))}
-                    {/* Selected Date */}
-                    <span className="p-2 bg-primary text-[#085555] font-bold rounded-lg shadow-sm">24</span>
-                    {/* Active Date */}
-                    <span className="p-2 hover:bg-gray-50 dark:hover:bg-[#2a3c3c] rounded-lg cursor-pointer text-[#111818] dark:text-white relative">
-                      25
-                      <span className="absolute bottom-1 left-1/2 -translate-x-1/2 size-1 bg-green-400 rounded-full"></span>
-                    </span>
-                    <span className="p-2 hover:bg-gray-50 dark:hover:bg-[#2a3c3c] rounded-lg cursor-pointer text-[#111818] dark:text-white">26</span>
-                    <span className="p-2 hover:bg-gray-50 dark:hover:bg-[#2a3c3c] rounded-lg cursor-pointer text-[#111818] dark:text-white">27</span>
-                    <span className="p-2 hover:bg-gray-50 dark:hover:bg-[#2a3c3c] rounded-lg cursor-pointer text-[#111818] dark:text-white">28</span>
-                  </div>
-                </div>
-
-      
-
-                {/* 3. Recent Payments */}
-                <div className="bg-surface-light dark:bg-surface-dark p-6 rounded-2xl border border-[#dbe6e6] dark:border-[#2a3c3c] shadow-soft">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-bold text-[#111818] dark:text-white">Recent Payments</h3>
-                    <button className="text-xs text-primary-dark font-bold hover:underline">View All</button>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3 mb-5">
-                    <div className="p-3 rounded-xl bg-[#f0f4f4] dark:bg-[#1f3333]">
-                      <p className="text-xs text-secondary dark:text-gray-400 font-medium">Pending</p>
-                      <p className="text-lg font-black text-[#111818] dark:text-white">$150</p>
-                    </div>
-                    <div className="p-3 rounded-xl bg-green-50 dark:bg-green-900/10">
-                      <p className="text-xs text-green-700 dark:text-green-400 font-medium">Cleared</p>
-                      <p className="text-lg font-black text-green-700 dark:text-green-400">$840</p>
-                    </div>
-                  </div>
-                  <div className="flex flex-col gap-3">
-                    <div className="flex items-center gap-3 p-3 rounded-xl border border-[#eff4f4] dark:border-[#2a3c3c] hover:bg-gray-50 dark:hover:bg-[#1f3333] transition-all">
-                      <div className="size-10 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-purple-600 font-bold text-xs">AJ</div>
-                      <div className="flex-1">
-                        <p className="text-sm font-bold text-[#111818] dark:text-white">Alice Johnson</p>
-                        <p className="text-xs text-secondary dark:text-gray-400">Oct 23 • Consultation</p>
+                  {viewMode === 'timeline' ? (
+                    /* Render Timeline Items */
+                    timelineItems.length === 0 ? (
+                      <div className="text-center py-20 text-gray-400">
+                        No slots defined for this day. Click "Define Availability" to add slots.
                       </div>
-                      <span className="text-xs font-bold text-green-600 bg-green-100 dark:bg-green-900/30 dark:text-green-400 px-2 py-1 rounded-md">+$80</span>
+                    ) : (
+                      timelineItems.map((item, index) => (
+                        <TimelineSlot key={index} data={item} onAction={handleSlotAction} />
+                      ))
+                    )
+                  ) : (
+                    /* Render Upcoming List */
+                    <div className="flex flex-col gap-4">
+                      <h3 className="text-lg font-bold mb-4">All Upcoming Appointments</h3>
+                      {upcomingList.length === 0 ? (
+                        <p className="text-gray-500">No upcoming appointments found.</p>
+                      ) : (
+                        upcomingList.map((slot) => (
+                          <TimelineSlot
+                            key={slot._id}
+                            data={{
+                              id: slot._id,
+                              time: `${slot.date} ${minutesToTime(slot.startMin)}`,
+                              type: 'appointment',
+                              title: 'Appointment',
+                              subtitle: `${slot.durationMin} mins`,
+                              status: slot.status,
+                              patientName: slot.booking?.user?.username,
+                              patientEmail: slot.booking?.user?.email,
+                              note: slot.booking?.notes,
+                              isUrgent: slot.booking?.isUrgent,
+                              reason: slot.booking?.reason
+                            }}
+                            onAction={handleSlotAction}
+                          />
+                        ))
+                      )}
                     </div>
-                    <div className="flex items-center gap-3 p-3 rounded-xl border border-[#eff4f4] dark:border-[#2a3c3c] hover:bg-gray-50 dark:hover:bg-[#1f3333] transition-all">
-                      <div className="size-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 font-bold text-xs">RK</div>
-                      <div className="flex-1">
-                        <p className="text-sm font-bold text-[#111818] dark:text-white">Raj Kumar</p>
-                        <p className="text-xs text-secondary dark:text-gray-400">Oct 22 • Follow-up</p>
-                      </div>
-                      <span className="text-xs font-bold text-amber-600 bg-amber-100 dark:bg-amber-900/30 dark:text-amber-400 px-2 py-1 rounded-md">Pending</span>
-                    </div>
-                  </div>
-                  <button className="w-full mt-4 flex items-center justify-center gap-2 py-2.5 rounded-xl border border-[#dbe6e6] bg-transparent text-[#111818] dark:text-white dark:border-[#2a3c3c] text-sm font-bold hover:bg-gray-50 dark:hover:bg-[#1f3333] transition-colors">
-                    <span className="material-symbols-outlined text-[18px]">credit_card</span>
-                    Billing Settings
-                  </button>
-                </div>
+                  )}
 
+                </div>
               </div>
             </div>
+
           </div>
         </div>
       </main>
     </div>
   );
 }
+
+export default SchedulePage;
