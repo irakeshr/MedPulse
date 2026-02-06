@@ -83,43 +83,47 @@ const DOCTORS_DATA = [
 
 export default function FindDoctorPage() {
   const [selectedDoctor, setSelectedDoctor] = useState(null);
-  const [DOCTORS_DATA, setDOCTORS_DATA] = useState([]);
-
+  const [doctors, setDoctors] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loadDoctors = async () => {
       try {
         const respond = await fetchAllDoctors();
-        setDOCTORS_DATA(respond.data.doctors)
-
+        if (respond.data.success) {
+          setDoctors(respond.data.doctors);
+        }
       } catch (error) {
         console.log(error);
+      } finally {
+        setLoading(false);
       }
     };
 
     loadDoctors();
   }, []);
- 
-console.log(DOCTORS_DATA);
+
+  // Filter only verified doctors
+  const verifiedDoctors = doctors.filter(doc => doc.verificationStatus === 'verified');
 
   return (
     // MAIN LAYOUT
     <div className="flex justify-center items-start gap-6 w-full px-4 lg:px-8 py-6">
-      
+
       {/*   LEFT COLUMN: MAIN CONTENT  */}
       <main className="flex flex-col w-full max-w-[720px] gap-6">
-        
+
         {/* --- Header & Search --- */}
         <div className="flex flex-col gap-4">
           <h1 className="text-2xl font-bold text-med-dark dark:text-white tracking-tight">Find a Doctor</h1>
-          
+
           <div className="relative group">
             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
               <span className="material-symbols-outlined text-med-text-secondary dark:text-gray-400 group-focus-within:text-primary transition-colors">search</span>
             </div>
-            <input 
-              className="block w-full pl-12 pr-4 py-3.5 bg-white dark:bg-[#1a2c2c] border border-[#e5e7eb] dark:border-[#2a3838] rounded-xl text-med-dark dark:text-white placeholder:text-med-text-secondary dark:placeholder:text-gray-500 focus:ring-2 focus:ring-primary/50 focus:border-primary/50 shadow-sm text-sm transition-all" 
-              placeholder="Search by doctor's name, specialization, or condition..." 
+            <input
+              className="block w-full pl-12 pr-4 py-3.5 bg-white dark:bg-[#1a2c2c] border border-[#e5e7eb] dark:border-[#2a3838] rounded-xl text-med-dark dark:text-white placeholder:text-med-text-secondary dark:placeholder:text-gray-500 focus:ring-2 focus:ring-primary/50 focus:border-primary/50 shadow-sm text-sm transition-all"
+              placeholder="Search by doctor's name, specialization, or condition..."
               type="text"
             />
             <div className="absolute inset-y-0 right-3 flex items-center">
@@ -150,7 +154,7 @@ console.log(DOCTORS_DATA);
             <option>New York</option>
             <option>San Francisco</option>
           </FilterSelect>
-          
+
           <button className="ml-auto flex items-center gap-2 text-sm font-medium text-med-text-secondary hover:text-med-dark dark:text-gray-400 dark:hover:text-white transition-colors">
             <span className="material-symbols-outlined text-[18px]">sort</span>
             Sort by Rating
@@ -159,83 +163,91 @@ console.log(DOCTORS_DATA);
 
         {/* --- Doctor List --- */}
         <div className="flex flex-col gap-4">
-          {DOCTORS_DATA.map((doctor) => (
-           
-             doctor.verificationStatus == "verified" ?
-            ( <DoctorCard 
-               key={doctor._id} 
-               doctor={doctor} 
-               onViewProfile={() => setSelectedDoctor(doctor)} 
-             /> ): null
-           
-          ))}
+          {loading ? (
+            <p className="text-center text-gray-500 py-10">Loading doctors...</p>
+          ) : verifiedDoctors.length > 0 ? (
+            verifiedDoctors.map((doctor) => (
+              <DoctorCard
+                key={doctor._id}
+                doctor={doctor}
+                onViewProfile={() => setSelectedDoctor(doctor)}
+              />
+            ))
+          ) : (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <span className="material-symbols-outlined text-4xl text-gray-300 mb-2">person_search</span>
+              <p className="text-gray-500 font-medium">No verified doctors found.</p>
+              <p className="text-sm text-gray-400">Try adjusting your filters or check back later.</p>
+            </div>
+          )}
         </div>
 
         {/* --- Load More --- */}
-        <div className="flex justify-center py-6">
-          <button className="px-6 py-2.5 bg-white dark:bg-[#1a2c2c] border border-[#e5e7eb] dark:border-[#2a3838] text-med-text-secondary dark:text-gray-400 font-medium text-sm rounded-xl hover:bg-med-gray dark:hover:bg-[#253636] transition-colors shadow-sm">
-            Load More Doctors
-          </button>
-        </div>
-
+        {verifiedDoctors.length > 0 && (
+          <div className="flex justify-center py-6">
+            <button className="px-6 py-2.5 bg-white dark:bg-[#1a2c2c] border border-[#e5e7eb] dark:border-[#2a3838] text-med-text-secondary dark:text-gray-400 font-medium text-sm rounded-xl hover:bg-med-gray dark:hover:bg-[#253636] transition-colors shadow-sm">
+              Load More Doctors
+            </button>
+          </div>
+        )}
       </main>
 
       {/* ================= RIGHT COLUMN: SIDEBAR ================= */}
       <div className="hidden xl:block w-80 shrink-0 sticky top-4 h-full overflow-y-auto scrollbar-hide">
-         <aside className="flex flex-col gap-6 w-full">
-            
-            {/* Info Card */}
-            <div className="bg-blue-50 dark:bg-blue-900/10 rounded-xl p-4 border border-blue-100 dark:border-blue-900/30">
-              <div className="flex items-start gap-3">
-                <span className="material-symbols-outlined text-blue-600 dark:text-blue-400">info</span>
-                <div>
-                  <h5 className="text-sm font-bold text-blue-800 dark:text-blue-300 mb-1">Verify Credentials</h5>
-                  <p className="text-xs text-blue-700 dark:text-blue-200 leading-snug">
-                    Always verify doctor credentials and reviews before booking critical procedures. MedPulse verifies licenses quarterly.
-                  </p>
-                </div>
+        <aside className="flex flex-col gap-6 w-full">
+
+          {/* Info Card */}
+          <div className="bg-blue-50 dark:bg-blue-900/10 rounded-xl p-4 border border-blue-100 dark:border-blue-900/30">
+            <div className="flex items-start gap-3">
+              <span className="material-symbols-outlined text-blue-600 dark:text-blue-400">info</span>
+              <div>
+                <h5 className="text-sm font-bold text-blue-800 dark:text-blue-300 mb-1">Verify Credentials</h5>
+                <p className="text-xs text-blue-700 dark:text-blue-200 leading-snug">
+                  Always verify doctor credentials and reviews before booking critical procedures. MedPulse verifies licenses quarterly.
+                </p>
               </div>
             </div>
+          </div>
 
-            {/* Top Specialists List */}
-            <div>
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="font-bold text-med-dark dark:text-white">Top Rated Specialists</h3>
-                <Link to="#" className="text-xs font-semibold text-primary hover:text-primary/80">View All</Link>
-              </div>
-              <div className="flex flex-col gap-3">
-                {/* Mini List Items */}
-                {[
-                  { name: "Dr. A. Patel", role: "Cardiologist", img: "https://lh3.googleusercontent.com/aida-public/AB6AXuBWka30KoK367JQLZVMGdVbRloQfwH54LWzQpR8XuUISpovvc4TGsUdWkqMNdlPcyXzkSRDksS1QZnoqTwchBrE3N4k4x4JWlsBEW9ALwqmVe1RzD7PuHa-0nFDQNLjONwtnit_rvvo8vd8xYPDX2jJfm7UpXkHdLjjwZi0Zqqyt5nDCq76QETXKZ61uD-5WlZZAEzemKC4YwrYlf9CjpjxskyMfmhJ8W1I4bApEl04XkOXpFYIHWxz15F8__4KBdlm8msNwiWdvZc", rating: 4.8 },
-                  { name: "Dr. Sarah Lee", role: "Dermatologist", img: "https://lh3.googleusercontent.com/aida-public/AB6AXuAdRB0fWy8d3kiKhg17-Cg5W8KXvVqNBLxLTlAYmeOw4hDvzBgIlkmPvtblsDqqj5YVFetFqH-Zk7wsFZzrQgj34CiNH8u5WSIQ55W_5ZKqmDBM2qvOea_VJxlq0mPYhN5WhZ64yxP6tNBfbkOwvluO2n_Bv19pC1CxJRCsZ9cFr4VC1Cg4EdjlkWJstHVPGSiQYtACglNF5Eh0IFa6ek9vQ70Pb34T_HEh4NbUm4UVC7ZLjejoWWj9C2a0DThGITI-qIzp__BqN0E", rating: 5.0 },
-                  { name: "Dr. Emily Chen", role: "General Physician", img: "https://lh3.googleusercontent.com/aida-public/AB6AXuAC_a9H2-3A4RMV8-Nvm03Vor3Mtqezjgw1yRZuZ88hNsrjxWkHnMaQw0TRuJ9Qgf3dxFG90nMFZ5Ep6PLMHEObNEbripg-r2vOWL3qqsNy58MA1FzBYfjaqn8cV9zHAl0bJy5LS1cH29CX-61nru4uTve2Dc3RG6zGx59dse1gPz_poHACgiJsUe5GQkfUEcQiMyfxlv62Q1TezG3dpNJS31vLnShUNGx-ccIzGAOzbHuSeMYL1ul7UYc1e7_8HALsRSgH9k3t5Gw", rating: 4.9 }
-                ].map((doc, idx) => (
-                  <div key={idx} className="group flex flex-col p-3 rounded-xl bg-white dark:bg-[#1a2c2c] border border-[#e5e7eb] dark:border-[#2a3838] hover:border-primary/50 cursor-pointer transition-colors">
-                    <div className="flex gap-3 items-center">
-                      <div className="size-10 rounded-full bg-cover bg-center" style={{ backgroundImage: `url('${doc.img}')` }}></div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex justify-between items-start mb-0.5">
-                          <span className="text-sm font-semibold text-med-dark dark:text-white truncate">{doc.name}</span>
-                          <span className="flex items-center text-[10px] bg-yellow-50 dark:bg-yellow-900/20 px-1.5 py-0.5 rounded text-yellow-700 dark:text-yellow-500 font-bold">
-                            <span className="material-symbols-outlined text-[10px] mr-0.5">star</span> {doc.rating}
-                          </span>
-                        </div>
-                        <p className="text-xs text-med-text-secondary dark:text-gray-400 truncate">{doc.role}</p>
+          {/* Top Specialists List */}
+          <div>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-bold text-med-dark dark:text-white">Top Rated Specialists</h3>
+              <Link to="#" className="text-xs font-semibold text-primary hover:text-primary/80">View All</Link>
+            </div>
+            <div className="flex flex-col gap-3">
+              {/* Mini List Items */}
+              {[
+                { name: "Dr. A. Patel", role: "Cardiologist", img: "https://lh3.googleusercontent.com/aida-public/AB6AXuBWka30KoK367JQLZVMGdVbRloQfwH54LWzQpR8XuUISpovvc4TGsUdWkqMNdlPcyXzkSRDksS1QZnoqTwchBrE3N4k4x4JWlsBEW9ALwqmVe1RzD7PuHa-0nFDQNLjONwtnit_rvvo8vd8xYPDX2jJfm7UpXkHdLjjwZi0Zqqyt5nDCq76QETXKZ61uD-5WlZZAEzemKC4YwrYlf9CjpjxskyMfmhJ8W1I4bApEl04XkOXpFYIHWxz15F8__4KBdlm8msNwiWdvZc", rating: 4.8 },
+                { name: "Dr. Sarah Lee", role: "Dermatologist", img: "https://lh3.googleusercontent.com/aida-public/AB6AXuAdRB0fWy8d3kiKhg17-Cg5W8KXvVqNBLxLTlAYmeOw4hDvzBgIlkmPvtblsDqqj5YVFetFqH-Zk7wsFZzrQgj34CiNH8u5WSIQ55W_5ZKqmDBM2qvOea_VJxlq0mPYhN5WhZ64yxP6tNBfbkOwvluO2n_Bv19pC1CxJRCsZ9cFr4VC1Cg4EdjlkWJstHVPGSiQYtACglNF5Eh0IFa6ek9vQ70Pb34T_HEh4NbUm4UVC7ZLjejoWWj9C2a0DThGITI-qIzp__BqN0E", rating: 5.0 },
+                { name: "Dr. Emily Chen", role: "General Physician", img: "https://lh3.googleusercontent.com/aida-public/AB6AXuAC_a9H2-3A4RMV8-Nvm03Vor3Mtqezjgw1yRZuZ88hNsrjxWkHnMaQw0TRuJ9Qgf3dxFG90nMFZ5Ep6PLMHEObNEbripg-r2vOWL3qqsNy58MA1FzBYfjaqn8cV9zHAl0bJy5LS1cH29CX-61nru4uTve2Dc3RG6zGx59dse1gPz_poHACgiJsUe5GQkfUEcQiMyfxlv62Q1TezG3dpNJS31vLnShUNGx-ccIzGAOzbHuSeMYL1ul7UYc1e7_8HALsRSgH9k3t5Gw", rating: 4.9 }
+              ].map((doc, idx) => (
+                <div key={idx} className="group flex flex-col p-3 rounded-xl bg-white dark:bg-[#1a2c2c] border border-[#e5e7eb] dark:border-[#2a3838] hover:border-primary/50 cursor-pointer transition-colors">
+                  <div className="flex gap-3 items-center">
+                    <div className="size-10 rounded-full bg-cover bg-center" style={{ backgroundImage: `url('${doc.img}')` }}></div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-start mb-0.5">
+                        <span className="text-sm font-semibold text-med-dark dark:text-white truncate">{doc.name}</span>
+                        <span className="flex items-center text-[10px] bg-yellow-50 dark:bg-yellow-900/20 px-1.5 py-0.5 rounded text-yellow-700 dark:text-yellow-500 font-bold">
+                          <span className="material-symbols-outlined text-[10px] mr-0.5">star</span> {doc.rating}
+                        </span>
                       </div>
+                      <p className="text-xs text-med-text-secondary dark:text-gray-400 truncate">{doc.role}</p>
                     </div>
                   </div>
-                ))}
-              </div>
+                </div>
+              ))}
             </div>
+          </div>
 
-         </aside>
+        </aside>
       </div>
 
       {/* --- MODAL (Rendered conditionally) --- */}
-      <DoctorModal 
-        isOpen={!!selectedDoctor} 
-        onClose={() => setSelectedDoctor(null)} 
-        doctor={selectedDoctor} 
+      <DoctorModal
+        isOpen={!!selectedDoctor}
+        onClose={() => setSelectedDoctor(null)}
+        doctor={selectedDoctor}
       />
 
     </div>
