@@ -82,12 +82,20 @@ const SchedulePage = () => {
           title: slot.status === 'available' ? 'Open Slot' : slot.status,
           subtitle: `${slot.durationMin} mins`,
           status: slot.status,
-          patientName: slot.booking?.user?.username,
+          patientName: slot.booking?.user?.fullName || slot.booking?.user?.username || slot.booking?.user?.email?.split('@')[0],
           patientEmail: slot.booking?.user?.email,
           note: slot.booking?.notes,
           isUrgent: slot.booking?.isUrgent,
           reason: slot.booking?.reason
         }));
+        
+        // Debug: Log the first booked slot to verify patient data
+        const bookedSlot = items.find(item => item.type === 'appointment');
+        if (bookedSlot) {
+          console.log('🔍 Sample Booked Slot:', bookedSlot);
+          console.log('📋 Raw Slot Data:', res.data.slots.find(s => s.status === 'booked'));
+        }
+        
         setTimelineItems(items);
       }
     } catch (err) {
@@ -339,7 +347,7 @@ const SchedulePage = () => {
                               title: 'Appointment',
                               subtitle: `${slot.durationMin} mins`,
                               status: slot.status,
-                              patientName: slot.booking?.user?.username,
+                              patientName: slot.booking?.user?.fullName || slot.booking?.user?.username || slot.booking?.user?.email?.split('@')[0],
                               patientEmail: slot.booking?.user?.email,
                               note: slot.booking?.notes,
                               isUrgent: slot.booking?.isUrgent,
