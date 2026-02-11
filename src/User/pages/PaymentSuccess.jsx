@@ -109,6 +109,29 @@ const PaymentSuccess = () => {
     );
   }
 
+  // Handle Failed Status
+  if (payment.status === 'failed') {
+    return (
+      <main className="flex-1 flex items-center justify-center p-6">
+        <div className="text-center max-w-md bg-white dark:bg-[#162a2a] rounded-xl p-8 border border-red-200 dark:border-red-900 shadow-xl">
+          <div className="mb-4">
+            <span className="material-symbols-outlined text-5xl text-red-500">error</span>
+          </div>
+          <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-3">Payment Failed</h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
+            Unfortunately, your payment could not be processed. Please try again or use a different payment method.
+          </p>
+          <button 
+            onClick={() => navigate('/doctors')} 
+            className="w-full px-6 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 font-semibold"
+          >
+            Try Again
+          </button>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="flex-1 flex items-center justify-center p-6">
       <div className="max-w-[520px] w-full bg-white dark:bg-[#162a2a] rounded-xl shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-100 dark:border-slate-800 p-8 md:p-12 text-center">
