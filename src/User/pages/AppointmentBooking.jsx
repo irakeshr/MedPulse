@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
-import { fetchOneDoctor, fetchDoctorSlots, bookAppointment } from '../../server/allApi';
+import { fetchOneDoctor, fetchDoctorSlots, createCheckoutSession } from '../../server/allApi';
 import { socket } from '../../socket';
 import { jwtDecode } from "jwt-decode";
 import { toast, ToastContainer } from "react-toastify";
@@ -157,26 +157,25 @@ const AppointmentBooking = () => {
     if (!selectedSlot) return;
 
     try {
-      const res = await bookAppointment({
+      // Create Stripe checkout session
+      const res = await createCheckoutSession({
         slotId: selectedSlot._id,
         userId,
+        doctorId,
         patientDetails: {
           isUrgent,
           reason,
           notes: problemNote
         }
       });
+
       if (res.data.success) {
-        toast(<CustomToast title="Success" message="Booking Confirmed!" type="success" />, { closeButton: false, bodyClassName: 'bg-transparent p-0' });
-        setShowConfirmModal(false);
-        setIsUrgent(false);
-        setReason('');
-        setProblemNote('');
-        setSelectedSlot(null);
+        // Redirect to Stripe checkout page
+        window.location.href = res.data.url;
       }
     } catch (err) {
       console.error(err);
-      toast(<CustomToast title="Booking Failed" message={err.response?.data?.message || "Booking Failed"} type="error" />, { closeButton: false, bodyClassName: 'bg-transparent p-0' });
+      toast(<CustomToast title="Payment Error" message={err.response?.data?.message || "Failed to initiate payment"} type="error" />, { closeButton: false, bodyClassName: 'bg-transparent p-0' });
     }
   };
 
