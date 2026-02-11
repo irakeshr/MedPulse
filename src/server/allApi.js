@@ -139,3 +139,17 @@ export const getUpcomingAppointments = async () => {
 export const getAvailableDates = async (doctorId) => {
   return await CommonApi("GET", `${SERVER_URL}/doctor/available-dates?doctorId=${doctorId}`);
 };
+
+// Payment API
+
+export const createCheckoutSession = async (reqBody) => {
+  return await CommonApi("POST", `${SERVER_URL}/payment/create-checkout-session`, reqBody);
+};
+
+export const getPaymentDetails = async (sessionId) => {
+  return await CommonApi("GET", `${SERVER_URL}/payment/${sessionId}`);
+};
+
+export const verifyPaymentStatus = async (sessionId) => {
+  return await CommonApi("GET", `${SERVER_URL}/payment/${sessionId}`);
+};

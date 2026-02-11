@@ -29,6 +29,8 @@ import AdminSettings from './Admin/pages/AdminSettings';
 import ProtectedAdmin from './routes/ProtectedAdmin';
 import RoleSelection from './components/RoleSelection';
 import AppointmentBooking from './User/pages/AppointmentBooking';
+import PaymentSuccess from './User/pages/PaymentSuccess';
+import PaymentFailed from './User/pages/PaymentFailed';
 const App = () => {
   return (
     <div >
@@ -38,6 +40,8 @@ const App = () => {
       {/* PUBLIC ROUTE (Login + Register) */}
       <Route path="/" element={<HomePage />} />
       <Route path="/role-selection/:emailID" element={<RoleSelection/>} />
+      <Route path="/payment-success" element={<PaymentSuccess />} />
+          <Route path="/payment-failed" element={<PaymentFailed  />} />
 
       {/* PROTECTED USER ROUTES */}
       <Route element={<ProtectedRoute />}>
@@ -46,6 +50,7 @@ const App = () => {
         <Route element={<HomeLayout />}>
         
           <Route path="/me" element={<FeedPage />} />
+          
           <Route path="/posts" element={<MyPostsPage />} />
           <Route path="/saved" element={<SavedPage />} />
           <Route path="/community" element={<CommunityPage />} />
