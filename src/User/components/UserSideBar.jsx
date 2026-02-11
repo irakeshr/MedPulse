@@ -57,7 +57,9 @@ const UserSideBar = () => {
         </div>
         <div className="flex flex-col gap-3">
           {/* Card 1: Appointments */}
-          <div className="bg-white dark:bg-[#1a2c2c] p-3 rounded-xl border border-med-gray dark:border-[#2a3838] hover:border-primary/50 cursor-pointer transition-colors shadow-sm">
+          <Link to="/appointments">
+
+           <div className="bg-white dark:bg-[#1a2c2c] p-3 rounded-xl border border-med-gray dark:border-[#2a3838] hover:border-primary/50 cursor-pointer transition-colors shadow-sm">
             <div className="flex items-center gap-3">
               <div className="flex items-center justify-center size-10 rounded-full bg-blue-50 text-blue-500 dark:bg-blue-900/20 dark:text-blue-400">
                 <span className="material-symbols-outlined">calendar_month</span>
@@ -68,6 +70,8 @@ const UserSideBar = () => {
               </div>
             </div>
           </div>
+          </Link>
+         
           
           {/* Card 2: History */}
           <div className="bg-white dark:bg-[#1a2c2c] p-3 rounded-xl border border-med-gray dark:border-[#2a3838] hover:border-primary/50 cursor-pointer transition-colors shadow-sm">

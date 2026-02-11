@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { getPaymentDetails } from '../../server/allApi';
 
 const PaymentSuccess = () => {
@@ -213,18 +213,23 @@ const PaymentSuccess = () => {
 
         {/* Action Buttons */}
         <div className="flex flex-col gap-3">
-          <button 
-            onClick={() => navigate('/user/appointments')}
+          <Link to="/appointments">
+           <button 
+            
             className="w-full bg-primary hover:bg-primary/90 transition-colors text-[#102222] font-bold py-3.5 px-6 rounded-lg text-base shadow-sm"
           >
             View My Appointments
           </button>
-          <button 
-            onClick={() => navigate('/user')}
+          </Link>
+         <Link to="/me">
+         <button 
+            
             className="w-full bg-white dark:bg-transparent border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-slate-300 font-semibold py-3.5 px-6 rounded-lg text-base"
           >
             Return to Dashboard
           </button>
+         </Link>
+          
         </div>
 
         {/* Receipt Link */}

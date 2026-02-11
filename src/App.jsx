@@ -31,9 +31,13 @@ import RoleSelection from './components/RoleSelection';
 import AppointmentBooking from './User/pages/AppointmentBooking';
 import PaymentSuccess from './User/pages/PaymentSuccess';
 import PaymentFailed from './User/pages/PaymentFailed';
+import MyAppointments from './User/pages/MyAppointments';
+import { ToastContainer } from 'react-toastify';
+
 const App = () => {
   return (
     <div >
+      <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover theme="light" />
       
       <Routes>
 
@@ -53,6 +57,7 @@ const App = () => {
           
           <Route path="/posts" element={<MyPostsPage />} />
           <Route path="/saved" element={<SavedPage />} />
+          <Route path="/appointments" element={<MyAppointments />} />
           <Route path="/community" element={<CommunityPage />} />
           <Route path="/community/:categoryId" element={<CommunityDetailFeed />} />
           <Route path="/profile" element={<ProfilePage />} />
