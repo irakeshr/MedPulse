@@ -3,37 +3,126 @@ import { useDispatch, useSelector } from "react-redux";
 import { formatDistanceToNow, isValid } from "date-fns";
 
 // API Imports
-import { likePostApi, createComment, getCommentsByPost } from "../../server/allApi";
+// API Imports
+import { likePostApi, createComment, getCommentsByPost, toggleSavePostApi } from "../../server/allApi";
+import { toast } from 'react-toastify';
+import CustomToast from '../../components/CustomToast'; // Fixed import path
 
 // Redux Imports
 import { updateLike } from "../../redux/postSlice";
 import { addComment, setComments } from "../../redux/commentSlice";
+import { toggleSavedPost } from "../../redux/userSlice";
 
 // Component Imports
 import CommentItem from "./CommentItem";
  
 
-const PostCard = ({ post, isOwnPost = false }) => {
+const PostCard = ({ post, isOwnPost = false, onEdit, onDelete }) => {
   const dispatch = useDispatch();
 
   // --- STATE & SELECTORS ---
   const [showComments, setShowComments] = useState(false);
   const [newComment, setNewComment] = useState("");
+  const [menuOpen, setMenuOpen] = useState(false); // Dropdown Menu State
+  
+  // --- DELETE STATE ---
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteTimeout, setDeleteTimeout] = useState(null);
   
   const { profile, stats } = useSelector((state) => state.userDetail);
+  
+  // Checking if post is saved (Optimistic UI)
+  const isPostSaved = profile?.savedPosts?.includes(post._id);
+  const [isSaved, setIsSaved] = useState(isPostSaved);
+
+  // Sync local state if profile updates (for persistence across nav)
+  useEffect(() => {
+     if (profile?.savedPosts) {
+        setIsSaved(profile.savedPosts.includes(post._id));
+     }
+  }, [profile?.savedPosts, post._id]);
   
   // Select comments specifically for this post
   const comments = useSelector(
     (state) => state.comment.byPostId?.[post._id] || []
   );
-console.log(comments)
+
+  // --- REFS ---
+  const menuRef = React.useRef(null);
+
   // --- HANDLERS ---
+  
+  // Click Outside to Close Menu
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (menuOpen && menuRef.current && !menuRef.current.contains(event.target)) {
+        setMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [menuOpen]);
+
+  const handleSave = async () => {
+    // Optimistic Update
+    // setIsSaved(!isSaved); // Handled by Redux sync now effectively, or keeps local immediate feedback
+    // Keep local feedback for instant feel before Redux propagates if needed, or rely on Redux.
+    // Redux is synchronous usually, so:
+    dispatch(toggleSavedPost(post._id)); 
+    setMenuOpen(false); // Close menu on action
+    
+    try {
+        await toggleSavePostApi(post._id);
+    } catch (error) {
+        // Revert on error
+        dispatch(toggleSavedPost(post._id)); 
+        console.error("Error saving post:", error);
+    }
+  };
+
+  const handleShare = async () => {
+     setMenuOpen(false);
+     const shareData = {
+         title: post.title || 'Check out this post on MedPulse',
+         text: post.content,
+         url: window.location.href // Or specific post URL
+     };
+
+     if (navigator.share) {
+         try {
+             await navigator.share(shareData);
+         } catch (err) {
+             console.log('Share canceled:', err);
+         }
+     } else {
+         // Fallback: Copy Link
+         navigator.clipboard.writeText(window.location.href);
+         toast(<CustomToast title="Link Copied" message="Post link copied to clipboard." type="success" />, { closeButton: false });
+     }
+  };
+
+  const handleDeleteClick = () => {
+      if (isDeleting) {
+          // Second click: Confirm Delete
+          if (onDelete) onDelete(post._id);
+          clearTimeout(deleteTimeout);
+          setIsDeleting(false);
+      } else {
+          // First click: Request Confirmation
+          setIsDeleting(true);
+          const timer = setTimeout(() => {
+              setIsDeleting(false);
+          }, 3000); // 3 seconds to confirm
+          setDeleteTimeout(timer);
+      }
+  };
 
   useEffect(()=>{
    const loadCommentOnce= async()=>{
 try {
         const res = await getCommentsByPost(post._id);
-        console.log(res)
         if (res.data && res.data.comments) {
           dispatch(setComments({ postId: post._id, comments: res.data.comments }));
         }
@@ -155,6 +244,8 @@ try {
   };
 
   if (!post) return null;
+  // console.log("post saved=>",post); // Clean up log
+  
 
   return (
     <article
@@ -182,7 +273,7 @@ try {
             <div className="flex items-center gap-2">
               <h3 className="font-bold text-med-dark dark:text-white text-sm">
                 {isOwnPost
-                  ? profile?.patientProfile?.displayName+"(You)" || "You"
+                  ? profile?.patientProfile?.displayName+" (You)" || "You"
                   : post.author?.displayName || post.author?.username }
               </h3>
               <span className="text-xs text-med-text-secondary dark:text-gray-500">
@@ -205,11 +296,51 @@ try {
         </div>
 
         {/* Status Badge & Menu */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 relative" ref={menuRef}>
           {renderStatusBadge()}
-          <button className="text-med-text-secondary dark:text-gray-500 hover:bg-med-gray dark:hover:bg-[#253636] p-1 rounded-full">
+          <button 
+             onClick={(e) => {
+                 e.stopPropagation(); 
+                 setMenuOpen((prev) => !prev);
+             }}
+             className="text-med-text-secondary dark:text-gray-500 hover:bg-med-gray dark:hover:bg-[#253636] p-1 rounded-full transition-colors"
+          >
             <span className="material-symbols-outlined">more_horiz</span>
           </button>
+
+             {/* Dropdown Menu */}
+             {menuOpen && (
+                <div 
+                    className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-[#1e2e2e] rounded-xl shadow-xl border border-gray-100 dark:border-gray-700 z-[9999] block"
+                >
+                    <div className="flex flex-col p-1">
+                        <button 
+                            onClick={handleSave}
+                            className="flex items-center gap-3 w-full px-3 py-2.5 text-sm font-medium text-med-dark dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-[#253636] rounded-lg transition-colors text-left"
+                        >
+                            <span className={`material-symbols-outlined text-[20px] ${isSaved ? 'text-primary fill-current' : 'text-gray-400'}`}>
+                                {isSaved ? 'bookmark_added' : 'bookmark'}
+                            </span>
+                            {isSaved ? 'Saved' : 'Save Post'}
+                        </button>
+                        
+                        <button 
+                            onClick={handleShare}
+                            className="flex items-center gap-3 w-full px-3 py-2.5 text-sm font-medium text-med-dark dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-[#253636] rounded-lg transition-colors text-left"
+                        >
+                            <span className="material-symbols-outlined text-[20px] text-gray-400">share</span>
+                            Share
+                        </button>
+
+                        <div className="h-px bg-gray-100 dark:bg-gray-700 my-1"></div>
+
+                        <button className="flex items-center gap-3 w-full px-3 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors text-left">
+                            <span className="material-symbols-outlined text-[20px]">flag</span>
+                            Report
+                        </button>
+                    </div>
+                </div>
+             )}
         </div>
       </header>
 
@@ -257,80 +388,64 @@ try {
           ))}
       </div>
 
-      {/* --- FOOTER ACTIONS --- */}
-      <div className="flex items-center justify-between border-t border-[#f0f4f4] dark:border-[#2a3838] pt-3">
+{/* --- Footer Actions --- */}
+      <div className="flex items-center justify-between border-t border-[#f0f4f4] dark:border-[#2a3838] pt-3 relative">
         <div className="flex gap-4">
-          {/* LEFT ACTION */}
-          {isOwnPost && post.doctorResponded ? (
-            <div className="flex items-center gap-1.5 text-sm text-primary font-medium">
-              <span className="material-symbols-outlined text-[20px]">
-                check_circle
-              </span>
-              <span>Doctor Responded</span>
-            </div>
-          ) : (
-            <button
-  onClick={() => handleLike(post._id)}
-  disabled={isOwnPost}
-  className="focus:outline-none" // Removed redundant classes from wrapper, moved logic inside
->
-  <span
-    className={`inline-flex items-center px-3 py-2 rounded-lg text-[15px] font-medium transition-colors ${
-      isLiked
-        ? "bg-primary/10 text-primary" // Suggestion: Use a light bg for active state
-        : "bg-med-gray dark:bg-[#253636] text-med-text-secondary dark:text-gray-400 hover:text-primary"
-    }`}
-  >
-    <span
-      className={`material-symbols-outlined text-[20px] mr-2 ${
-        isLiked ? "fill-current" : ""
-      }`}
-      style={isLiked ? { fontVariationSettings: "'FILL' 1" } : {}}
-    >
-      thumb_up
-    </span>
-    
-    <span>
-      {likesCount} {!isLiked && "Helpful"}
-    </span>
-  </span>
-</button>
-          )}
+          {/* Reaction Button (Like) */}
+             <button
+                onClick={() => handleLike(post._id)}
+                disabled={isOwnPost}
+                className="focus:outline-none" 
+             >
+                <span className={`inline-flex items-center px-3 py-2 rounded-lg text-[15px] font-medium transition-colors ${
+                    isLiked
+                        ? "bg-primary/10 text-primary" 
+                        : "bg-med-gray dark:bg-[#253636] text-med-text-secondary dark:text-gray-400 hover:text-primary"
+                    }`}>
+                    <span className={`material-symbols-outlined text-[20px] mr-2 ${isLiked ? "fill-current" : ""}`}
+                          style={isLiked ? { fontVariationSettings: "'FILL' 1" } : {}}>
+                    thumb_up
+                    </span>
+                    <span>{likesCount} {!isLiked && "Helpful"}</span>
+                </span>
+            </button>
 
-          {/* MIDDLE ACTION */}
-          <button
-  onClick={handleToggleComments}
-  className="focus:outline-none"
->
-  <span
-    className={`inline-flex items-center px-3 py-2 rounded-lg text-[15px] font-medium transition-colors ${
-      showComments
-        ? "bg-primary/10 text-primary" // Active State
-        : "bg-med-gray dark:bg-[#253636] text-med-text-secondary dark:text-gray-400 hover:text-primary" // Inactive State
-    }`}
-  >
-    <span className="material-symbols-outlined text-[20px] mr-2">
-      chat_bubble
-    </span>
-    
-    <span>
-      {post.commentCount || (comments ? comments.length : 0)}
-    </span>
-  </span>
-</button>
+          {/* Comment Button */}
+          <button onClick={handleToggleComments} className="focus:outline-none">
+            <span className={`inline-flex items-center px-3 py-2 rounded-lg text-[15px] font-medium transition-colors ${
+                showComments
+                    ? "bg-primary/10 text-primary"
+                    : "bg-med-gray dark:bg-[#253636] text-med-text-secondary dark:text-gray-400 hover:text-primary"
+            }`}>
+                <span className="material-symbols-outlined text-[20px] mr-2">chat_bubble</span>
+                <span>{post.commentCount || (comments ? comments.length : 0)}</span>
+            </span>
+          </button>
         </div>
 
-        {/* RIGHT ACTION */}
-        {isOwnPost ? (
-          <button className="flex items-center gap-1.5 text-sm text-med-text-secondary dark:text-gray-400 hover:text-primary transition-colors">
-            <span className="material-symbols-outlined text-[20px]">edit</span>
-            <span>Edit</span>
-          </button>
-        ) : (
-          <button className="flex items-center gap-1.5 text-sm text-med-text-secondary dark:text-gray-400 hover:text-primary transition-colors">
-            <span className="material-symbols-outlined text-[20px]">share</span>
-            <span>Share</span>
-          </button>
+        {/* Right Side Actions: Edit/Delete OR Share/Save */}
+        {/* Right Side Actions: Edit/Delete OR Share/Save */}
+        {isOwnPost && (
+            <div className="flex items-center gap-2">
+                <button 
+                  onClick={() => onEdit && onEdit(post)}
+                  className="flex items-center gap-1.5 text-sm text-med-text-secondary dark:text-gray-400 hover:text-primary transition-colors"
+                >
+                    <span className="material-symbols-outlined text-[20px]">edit</span>
+                    <span>Edit</span>
+                </button>
+                <button 
+                   onClick={handleDeleteClick}
+                   className={`flex items-center gap-1.5 text-sm transition-colors rounded-lg px-2 py-1 ${
+                       isDeleting 
+                       ? "bg-red-600 text-white" 
+                       : "text-med-text-secondary dark:text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
+                   }`}
+                >
+                    <span className="material-symbols-outlined text-[20px]">delete</span>
+                    <span>{isDeleting ? "Confirm?" : "Delete"}</span>
+                </button>
+            </div>
         )}
       </div>
 

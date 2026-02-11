@@ -1,22 +1,16 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import PostCard from "../components/PostCard"; // Adjust path as needed
 import DoctorModal from "../components/DoctorModal";
-import { useState } from "react";
-import { useSelector,useDispatch } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import CreatePostForm from "../components/CreatePostForm";
-import { getDoctorProfile, getPost } from "../../server/allApi";
-import { userPost } from "../../server/allApi";
-import { ToastContainer ,toast } from "react-toastify";
+import { getDoctorProfile, getPost, userPost, editPostApi, deletePostApi } from "../../server/allApi";
+import { ToastContainer, toast } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
 import CustomToast from "../../components/CustomToast";
 import { setPosts } from "../../redux/postSlice";
- 
-
 
 // --- MOCK DATA FOR FEED ---
- 
-
 const DOCTORS = [
   {
     id: 1,
@@ -30,105 +24,147 @@ const DOCTORS = [
 ];
 
 const FeedPage = () => {
-const dispatch =useDispatch();
+  const dispatch = useDispatch();
   const [selectedDoctor, setSelectedDoctor] = useState(null);
-  const post = useSelector((state)=>state.post.posts)
-  const searchKey = useSelector((state)=>state.post.searchKey)
-  console.log(post)
-  const { profile, stats } = useSelector((state) => state.userDetail)
-  const [posted,setPosted]=useState(true);
- 
-  
-     
-   
+  const post = useSelector((state) => state.post.posts);
+  const searchKey = useSelector((state) => state.post.searchKey);
+  const { profile, stats } = useSelector((state) => state.userDetail);
+  const [posted, setPosted] = useState(true);
+
+  // --- EDIT STATE ---
+  const [editingPost, setEditingPost] = useState(null);
+
   const handlePostSubmit = async (data) => {
- // isAnonymous in false there but it return success with true from db why
     try {
       const formData = new FormData();
-
       formData.append("title", data.title);
       formData.append("description", data.description);
       formData.append("stream", data.stream);
-      formData.append("isAnonymous",String(data.isAnonymous));
+      formData.append("isAnonymous", String(data.isAnonymous));
       formData.append("includeLocation", data.includeLocation);
       formData.append("timestamp", data.timestamp);
-      
 
       data.tags.forEach((tag) => formData.append("tags[]", tag));
-      
 
       if (data.image) {
         formData.append("image", data.image);
       }
-     
 
       const res = await userPost(formData);
 
       if (res?.status === 201) {
-        
         setPosted(!posted);
-        
-            toast(
-    <CustomToast 
-      title="Post Created Successfully"
-      message= "Your symptom post is now live in the feed" 
-      type="success"
-    />, 
-    {
-      // Optional: specific overrides for just this toast
-      position: "bottom-right",
-       
-      bodyClassName: "p-5 m-0",
-      closeButton: false // We are using our own close button inside the component
-    }
-  );
-      }  
-    
+        toast(
+          <CustomToast
+            title="Post Created Successfully"
+            message="Your symptom post is now live in the feed"
+            type="success"
+          />,
+          { position: "bottom-right", bodyClassName: "p-5 m-0", closeButton: false }
+        );
+      }
     } catch (error) {
       if (error.response) {
-     
-     
- toast(
-    <CustomToast 
-      title={error.response.data.message} 
-      message= {error.response.data.message} 
-      type="error"
-    />, 
-    {
-      // Optional: specific overrides for just this toast
-      position: "bottom-right",
-       
-      bodyClassName: "p-5 m-0",
-      closeButton: false // We are using our own close button inside the component
-    }
-  );
-      // Example UI usage:
-      // setError(error.response.data.message)
-    } else {
-      
-         toast.error("Server not reachable. Try again later.");
-    }
-    }
-  };
-useEffect(() => {
-  const fetchPosts = async () => {
-    try {
-           
-         
-      const Post = await getPost(searchKey);
-      dispatch(setPosts(Post.data.modifiedPosts));
-    } catch (error) {
-      
-      toast.error("Server not reachable. Try again later.");
+        toast(
+          <CustomToast
+            title={error.response.data.message}
+            message={error.response.data.message}
+            type="error"
+          />,
+          { position: "bottom-right", bodyClassName: "p-5 m-0", closeButton: false }
+        );
+      } else {
+        toast.error("Server not reachable. Try again later.");
+      }
     }
   };
 
-  fetchPosts();
-}, [posted, dispatch,searchKey]);
+  // --- DELETE HANDLER ---
+  const handleDeletePost = async (postId) => {
+      // Optimistic UI Update (or wait for success)
+      // Usually better to confirm then delete. PostCard handles the "Confirm?" double click.
+      try {
+          const res = await deletePostApi(postId);
+          if (res.status === 200 || res.status === 204) {
+             toast(<CustomToast title="Post Deleted" message="Your post has been removed." type="success" />, { closeButton: false });
+             // Update Redux
+             const updatedPosts = post.filter(p => p._id !== postId);
+             dispatch(setPosts(updatedPosts));
+          }
+      } catch (error) {
+         console.error("Delete failed:", error);
+         toast.error("Failed to delete post.");
+      }
+  };
+
+  // --- EDIT HANDLER (Opens Modal) ---
+  const handleEditPost = (postToEdit) => {
+      setEditingPost(postToEdit);
+  };
+
+  // --- EDIT SUBMIT (API Call) ---
+  const handleEditSubmit = async (data) => {
+      if (!editingPost) return;
+
+      try {
+        const formData = new FormData();
+        formData.append("title", data.title);
+        formData.append("description", data.description); // Backend likely maps this to content
+        formData.append("stream", data.stream);
+        formData.append("isAnonymous", String(data.isAnonymous));
+        formData.append("includeLocation", data.includeLocation);
+        // formData.append("timestamp", data.timestamp); // Keep original timestamp usually? Or update? CreatePostForm sends new timestamp.
+
+        data.tags.forEach((tag) => formData.append("tags[]", tag));
+
+        if (data.image) {
+             formData.append("image", data.image);
+        }
+
+        const res = await editPostApi(editingPost._id, formData);
+
+        if (res.status === 200) {
+            toast(<CustomToast title="Post Updated" message="Your changes have been saved." type="success" />, { closeButton: false });
+            
+            // Update Redux
+            const updatedPosts = post.map(p => p._id === editingPost._id ? res.data.post : p); // Assuming API returns { post: ... }
+            // If API returns plain post or different structure, adjust. 
+            // Fallback: trigger re-fetch
+            if(res.data && res.data.post){
+                 dispatch(setPosts(updatedPosts));
+            } else {
+                 setPosted(!posted); // Trigger re-fetch
+            }
+            
+            setEditingPost(null);
+        }
+
+      } catch (error) {
+          console.error("Edit failed:", error);
+          toast.error("Failed to update post.");
+      }
+  };
+  
+  // Close Modal Handler
+  const closeEditModal = () => setEditingPost(null);
+
+
+  useEffect(() => {
+    const fetchPosts = async () => {
+      try {
+        const Post = await getPost(searchKey);
+        dispatch(setPosts(Post.data.modifiedPosts));
+      } catch (error) {
+        toast.error("Server not reachable. Try again later.");
+      }
+    };
+
+    fetchPosts();
+  }, [posted, dispatch, searchKey]);
 
   return (
     // MAIN LAYOUT CONTAINER
-    <div className="flex justify-center items-start gap-6 w-full px-4 lg:px-8 py-6">
+    <div className="flex justify-center items-start gap-6 w-full px-4 lg:px-8 py-6 relative">
      
       {/* LEFT COLUMN: MAIN FEED (Composer + Posts) */}
 
@@ -164,7 +200,13 @@ useEffect(() => {
         {/* --- Feed Posts List --- */}
         <div className="flex flex-col gap-6">
           {post.map((post) => (
-            <PostCard key={post._id} post={post} isOwnPost={stats._id===post.author._id} />
+            <PostCard 
+                key={post._id} 
+                post={post} 
+                isOwnPost={stats._id === post.author._id} 
+                onEdit={handleEditPost}
+                onDelete={handleDeletePost}
+            />
           ))}
         </div>
 
@@ -174,9 +216,9 @@ useEffect(() => {
         </div>
       </main>
 
-      {/* ========================================= */}
+       
       {/* RIGHT COLUMN: SIDEBAR (Merged Inline)     */}
-      {/* ========================================= */}
+      
       <div className="hidden xl:block w-80 shrink-0 sticky top-4 h-full overflow-y-auto scrollbar-hide">
         <aside className="flex flex-col gap-6 w-full">
           {/* 1. Disclaimer Card */}
@@ -289,6 +331,32 @@ useEffect(() => {
           doctor={selectedDoctor}
         />
       </div>
+
+      {/* --- EDIT POST MODAL OVERLAY --- */}
+      {editingPost && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+              <div 
+                  className="relative w-full max-w-2xl bg-white dark:bg-[#1a2c2c] rounded-2xl shadow-2xl p-6 border border-gray-100 dark:border-[#2a3838] max-h-[90vh] overflow-y-auto"
+                  onClick={(e) => e.stopPropagation()}
+              >
+                  <div className="flex justify-between items-center mb-4">
+                      <h2 className="text-xl font-bold text-med-dark dark:text-white">Edit Post</h2>
+                      <button 
+                          onClick={closeEditModal}
+                          className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-[#253636] text-gray-500"
+                      >
+                          <span className="material-symbols-outlined">close</span>
+                      </button>
+                  </div>
+                  
+                  <CreatePostForm 
+                      initialData={editingPost}
+                      onSubmit={handleEditSubmit}
+                  />
+              </div>
+          </div>
+      )}
+
     </div>
   );
 };

@@ -1,9 +1,9 @@
 import React from 'react';
 import { Route,Routes } from 'react-router-dom';
 import HomeLayout from './User/pages/HomeLayout';
- import FeedPage from './User/pages/FeedPage';
+import FeedPage from './User/pages/FeedPage';
 import MyPostsPage from './User/pages/MyPostsPage';
-import SavedPage from './User/pages/SavedPage';
+import SavedPostsPage from './User/pages/SavedPostsPage'; // Updated
 import CommunityPage from './User/pages/CommunityPage';
 import ProfilePage from './User/pages/ProfilePage';
 import CommunityDetailFeed from './User/pages/CommunityDetailFeed';
@@ -56,8 +56,11 @@ const App = () => {
           <Route path="/me" element={<FeedPage />} />
           
           <Route path="/posts" element={<MyPostsPage />} />
-          <Route path="/saved" element={<SavedPage />} />
-          <Route path="/appointments" element={<MyAppointments />} />
+             <Route path="/feed" element={<FeedPage />} />
+             <Route path="/my-appointments" element={<MyAppointments />} /> {/* Changed to MyAppointments */}
+             {/* <Route path="/payment-success" element={<PaymentSuccess />} /> Removed duplicate */}
+             <Route path="/my-posts" element={<MyPostsPage />} />
+             <Route path="/saved" element={<SavedPostsPage />} /> 
           <Route path="/community" element={<CommunityPage />} />
           <Route path="/community/:categoryId" element={<CommunityDetailFeed />} />
           <Route path="/profile" element={<ProfilePage />} />
