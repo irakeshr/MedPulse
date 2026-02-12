@@ -39,12 +39,34 @@ export const fetchOneDoctor = async (doctorId) => {
 export const userPost = async (reqBody) => {
   return await CommonApi("POST", `${SERVER_URL}/posts/user-post`, reqBody);
 };
+export const getMyPostsApi = async () => {
+  return await CommonApi("GET", `${SERVER_URL}/posts/my-posts`);
+};
+
 export const getPost = async (searchKey) => {
   return await CommonApi("GET", `${SERVER_URL}/posts/get-post?search=${searchKey}`);
 };
 
+export const deletePostApi = async (postId) => {
+  return await CommonApi("DELETE", `${SERVER_URL}/posts/${postId}`);
+};
+
+export const editPostApi = async (postId, data) => {
+  return await CommonApi("PUT", `${SERVER_URL}/posts/${postId}`, data, {
+    "Content-Type": "multipart/form-data",
+  });
+};
+
 export const likePostApi = async (reqBody) => {
   return await CommonApi("POST", `${SERVER_URL}/posts/like-unlike`, reqBody);
+};
+
+export const toggleSavePostApi = async (postId) => {
+  return await CommonApi("POST", `${SERVER_URL}/user/save-post/${postId}`);
+};
+
+export const getSavedPostsApi = async () => {
+    return await CommonApi("GET", `${SERVER_URL}/user/saved-posts`);
 };
 
 export const createComment = async (postId, reqBody) => {

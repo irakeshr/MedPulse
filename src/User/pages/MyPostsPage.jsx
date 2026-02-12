@@ -1,70 +1,131 @@
 // src/pages/MyPostsPage.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import PostCard from '../components/PostCard'; // Adjust path if needed
-
-// --- MOCK DATA (Simulating Backend Response) ---
-const MY_POSTS_DATA = [
-  {
-    id: 1,
-    isAnonymous: false,
-    userImage: "https://lh3.googleusercontent.com/aida-public/AB6AXuCOLCviMOpASErCHhTQmvY6k34iYjPPoNBtTcXTevn6qvSVudTEwgQtFPiNSM2fdDYS95FtRj0VMuJZ2MhrCv7Je5qakn_Yo9VwsJIEKLLds3-whsOamhqUK47VWjCFw35W61E_-AWBjonf9A9fdwikxOiALd27cPTkB7PAhHRgG7d4ltlHxF__DTRS_15qNAHrVAhOQk3p2mBzmH7Uum18DB5Z6Ck4VDoIjknvWcW0y9wVdlHYF1a23BsjBnqQBRNl__52tiym3xU",
-    userName: "You", 
-    timeAgo: "2 hours ago",
-    title: "Recurring migraines in the morning",
-    content: "I've been waking up with a sharp pain on the left side of my head for the past few days. It usually fades by noon but comes back if I look at screens for too long. Has anyone else experienced this specific timing?",
-    severity: "Medium",
-    duration: "5 days",
-    tags: ["#Migraine", "#LightSensitivity"],
-    helpfulCount: 5,
-    commentCount: 8,
-    doctorResponded: true, 
-    status: null, 
-    doctorResponseData: {
-      name: "Dr.Abhirami",
-      image: "https://lh3.googleusercontent.com/aida-public/AB6AXuAC_a9H2-3A4RMV8-Nvm03Vor3Mtqezjgw1yRZuZ88hNsrjxWkHnMaQw0TRuJ9Qgf3dxFG90nMFZ5Ep6PLMHEObNEbripg-r2vOWL3qqsNy58MA1FzBYfjaqn8cV9zHAl0bJy5LS1cH29CX-61nru4uTve2Dc3RG6zGx59dse1gPz_poHACgiJsUe5GQkfUEcQiMyfxlv62Q1TezG3dpNJS31vLnShUNGx-ccIzGAOzbHuSeMYL1ul7UYc1e7_8HALsRSgH9k3t5Gw",
-      text: "Morning headaches can sometimes be related to sleep posture or even teeth grinding (bruxism). Since you mentioned screen sensitivity..."
-    }
-  },
-  {
-    id: 2,
-    isAnonymous: true,
-    userName: "You (Anonymous)", 
-    timeAgo: "Yesterday",
-    title: "Sharp pain in lower back after lifting",
-    content: "I helped a friend move yesterday and now I can barely stand up straight. It's a sharp shooting pain right above my hips. Heat makes it feel slightly better.",
-    severity: "High",
-    duration: "1 day",
-    tags: ["#BackPain"],
-    helpfulCount: 5,
-    commentCount: 2,
-    doctorResponded: false,
-    status: "Unresolved", 
-  },
-  {
-    id: 3,
-    isAnonymous: false,
-    userImage: "https://lh3.googleusercontent.com/aida-public/AB6AXuCOLCviMOpASErCHhTQmvY6k34iYjPPoNBtTcXTevn6qvSVudTEwgQtFPiNSM2fdDYS95FtRj0VMuJZ2MhrCv7Je5qakn_Yo9VwsJIEKLLds3-whsOamhqUK47VWjCFw35W61E_-AWBjonf9A9fdwikxOiALd27cPTkB7PAhHRgG7d4ltlHxF__DTRS_15qNAHrVAhOQk3p2mBzmH7Uum18DB5Z6Ck4VDoIjknvWcW0y9wVdlHYF1a23BsjBnqQBRNl__52tiym3xU",
-    userName: "You",
-    timeAgo: "2 weeks ago",
-    title: "Mild fever and scratchy throat",
-    content: "Started feeling off yesterday evening. Temperature is around 99.5F. Just looking for some home remedy suggestions to nip this in the bud before the weekend.",
-    severity: "Low",
-    duration: "2 days",
-    tags: ["#Cold", "#HomeRemedy"],
-    helpfulCount: 12,
-    commentCount: 15,
-    doctorResponded: false,
-    status: "Resolved", 
-  }
-];
+import CreatePostForm from '../components/CreatePostForm';
+import { getMyPostsApi, deletePostApi, editPostApi } from '../../server/allApi';
+import { toast } from 'react-toastify';
+import CustomToast from '../../components/CustomToast';
 
 export default function MyPostsPage() {
   const [activeFilter, setActiveFilter] = useState("All History");
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  
+  // Edit Modal State
+  const [editingPost, setEditingPost] = useState(null);
+
+  // Helper for Consistent Toasts
+  const showToast = (title, message, type = 'success') => {
+      toast(
+          <CustomToast title={title} message={message} type={type} />,
+          { bodyClassName: "p-5 m-0", closeButton: false }
+      );
+  };
+
+  useEffect(() => {
+    fetchMyPosts();
+  }, []);
+
+  const fetchMyPosts = async () => {
+    try {
+      const res = await getMyPostsApi();
+      if (res.status === 200) {
+        setPosts(res.data.posts);
+      } else {
+        showToast("Error", "Failed to fetch your posts", "error");
+      }
+    } catch (error) {
+      console.error("Error fetching my posts:", error);
+      showToast("Error", "Something went wrong while fetching posts", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async (postId) => {
+    const loadingToast = toast.loading("Deleting post...");
+    try {
+        const res = await deletePostApi(postId);
+        if (res.status === 200) {
+            setPosts(prev => prev.filter(p => p._id !== postId));
+            toast.update(loadingToast, { render: "Post deleted successfully", type: "success", isLoading: false, autoClose: 3000 });
+        } else {
+             toast.update(loadingToast, { render: "Failed to delete post", type: "error", isLoading: false, autoClose: 3000 });
+        }
+    } catch (error) {
+        console.error("Error deleting post:", error);
+        toast.update(loadingToast, { render: "Error deleting post", type: "error", isLoading: false, autoClose: 3000 });
+    }
+  };
+
+  const handleEdit = (post) => {
+    setEditingPost(post);
+  };
+
+  const handleUpdateSubmit = async (formData) => {
+     if (!editingPost) return;
+     
+     // IMPORTANT: Map form data back to API expected format
+     const apiData = new FormData();
+     apiData.append('title', formData.title);
+     apiData.append('description', formData.description);
+     apiData.append('stream', formData.stream);
+     apiData.append('isAnonymous', formData.isAnonymous);
+     apiData.append('tags', formData.tags); // Arrays appended directly might need JSON.stringify or loop depending on backend, but controller splits string so comma-join or standard append works
+     // Note: Backend splits tags by comma if string, so array.join() or loop? FormData handles arrays by appending multiple values with same key or one value.
+     // Controller line: post.tags = tags ? (Array.isArray(tags) ? tags : tags.split(',')) : post.tags;
+     // Frontend sends array. Let's send as JSON string or comma separated if we can.
+     // Safest for FormData with this backend logic:
+     // If backend accepts array (Express doesn't auto-parse FormData arrays deeply without explicit handling), sending as comma-separated string is safer if backend supports it.
+     
+     // But wait, axios + multer handles standard FormData. 
+     // Let's just append normally.
+     
+     if (formData.image) apiData.append('image', formData.image);
+     
+     // Toast handled in form? No, let's handle here.
+    const loadingToast = toast.loading("Updating post...");
+
+     try {
+         const res = await editPostApi(editingPost._id, apiData);
+         if (res.status === 200) {
+             const updatedPost = res.data.post;
+             setPosts(prev => prev.map(p => p._id === updatedPost._id ? updatedPost : p));
+             setEditingPost(null); // Close Modal
+             toast.update(loadingToast, { render: "Post updated successfully", type: "success", isLoading: false, autoClose: 3000 });
+         } else {
+            toast.update(loadingToast, { render: "Failed to update post", type: "error", isLoading: false, autoClose: 3000 });
+         }
+     } catch (error) {
+         console.error("Error updating post:", error);
+         toast.update(loadingToast, { render: "Error updating post", type: "error", isLoading: false, autoClose: 3000 });
+     }
+  };
 
   return (
     // MAIN LAYOUT CONTAINER: Flex Grid
-    <div className="flex justify-center items-start gap-6 w-full px-4 lg:px-8 py-6">
+    <div className="flex justify-center items-start gap-6 w-full px-4 lg:px-8 py-6 relative">
       
+      {/* --- EDIT MODAL OVERLAY --- */}
+      {editingPost && (
+         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+            <div className="bg-white dark:bg-[#1a2c2c] w-full max-w-2xl rounded-2xl p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+                <button 
+                    onClick={() => setEditingPost(null)}
+                    className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                >
+                    <span className="material-symbols-outlined">close</span>
+                </button>
+                <h2 className="text-xl font-bold text-med-dark dark:text-white mb-6">Edit Post</h2>
+                
+                <CreatePostForm 
+                    initialData={editingPost} 
+                    onSubmit={handleUpdateSubmit} 
+                />
+            </div>
+         </div>
+      )}
+
       {/* ========================================= */}
       {/* LEFT COLUMN: MAIN CONTENT                 */}
       {/* ========================================= */}
@@ -98,25 +159,33 @@ export default function MyPostsPage() {
 
         {/* --- Posts List --- */}
         <div className="flex flex-col gap-6">
-          {MY_POSTS_DATA.map((post) => (
-            <PostCard 
-              key={post.id} 
-              post={post} 
-              isOwnPost={true} 
-            />
-          ))}
-        </div>
-
-        {/* --- Loading Spinner --- */}
-        <div className="flex justify-center py-6">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          {loading ? (
+             <div className="flex justify-center py-6">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+             </div>
+          ) : posts.length > 0 ? (
+            posts.map((post) => (
+              <PostCard 
+                key={post._id} 
+                post={post} 
+                isOwnPost={true}
+                onDelete={handleDelete}
+                onEdit={handleEdit}
+              />
+            ))
+          ) : (
+            <div className="text-center py-10 bg-white dark:bg-[#1a2c2c] rounded-2xl border border-dashed border-gray-300 dark:border-gray-700">
+                <span className="material-symbols-outlined text-4xl text-gray-400 mb-2">post_add</span>
+                <p className="text-gray-500 dark:text-gray-400 font-medium">No posts found.</p>
+                <p className="text-sm text-gray-400">Share your symptoms to get advice.</p>
+            </div>
+          )}
         </div>
 
       </main>
-
-      {/* ========================================= */}
+ 
       {/* RIGHT COLUMN: STATS SIDEBAR               */}
-      {/* ========================================= */}
+     
       <div className="hidden xl:block w-80 shrink-0 sticky top-4">
         <aside className="flex flex-col gap-6 w-full">
           
@@ -125,19 +194,25 @@ export default function MyPostsPage() {
             <h3 className="font-bold text-med-dark dark:text-white mb-4">My Activity Stats</h3>
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-1">
-                <span className="text-2xl font-bold text-med-dark dark:text-white">12</span>
+                <span className="text-2xl font-bold text-med-dark dark:text-white">{posts.length}</span>
                 <span className="text-xs text-med-text-secondary dark:text-gray-400">Total Posts</span>
               </div>
               <div className="flex flex-col gap-1">
-                <span className="text-2xl font-bold text-primary">8</span>
+                <span className="text-2xl font-bold text-primary">
+                    {posts.filter(p => p.status === 'Resolved').length}
+                </span>
                 <span className="text-xs text-med-text-secondary dark:text-gray-400">Resolved</span>
               </div>
               <div className="flex flex-col gap-1">
-                <span className="text-2xl font-bold text-med-dark dark:text-white">45</span>
+                <span className="text-2xl font-bold text-med-dark dark:text-white">
+                     {posts.reduce((acc, curr) => acc + (curr.commentCount || 0), 0)}
+                </span>
                 <span className="text-xs text-med-text-secondary dark:text-gray-400">Responses</span>
               </div>
               <div className="flex flex-col gap-1">
-                <span className="text-2xl font-bold text-med-dark dark:text-white">3</span>
+                <span className="text-2xl font-bold text-med-dark dark:text-white">
+                    {posts.filter(p => p.doctorResponded).length}
+                </span>
                 <span className="text-xs text-med-text-secondary dark:text-gray-400">Dr. Replies</span>
               </div>
             </div>

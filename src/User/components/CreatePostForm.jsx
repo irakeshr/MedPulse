@@ -14,7 +14,7 @@ const MEDICAL_STREAMS = [
   "Psychiatry",
 ];
 
-const CreatePostForm = ({ onSubmit, userAvatar }) => {
+const CreatePostForm = ({ onSubmit, userAvatar, initialData = null }) => {
   const navigate = useNavigate();
   const { profile } = useSelector((state) => state.userDetail);
   
@@ -28,7 +28,8 @@ const CreatePostForm = ({ onSubmit, userAvatar }) => {
     healthTags,
     location,
     profileImage
-  } = profile.patientProfile;
+  } = profile.patientProfile || {}; // Add fallback for safety
+  
   const isProfileComplete = Boolean(
     allergies &&
       bio &&
@@ -50,6 +51,22 @@ const CreatePostForm = ({ onSubmit, userAvatar }) => {
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [addLocation, setAddLocation] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // --- Effect: Prefill Data if Editing ---
+  useEffect(() => {
+    if (initialData) {
+        setTitle(initialData.title || "");
+        setDescription(initialData.content || ""); // Note: backend uses 'content', form uses 'description'
+        setSelectedStream(initialData.symptomType || "");
+        setTags(initialData.tags || []);
+        setIsAnonymous(initialData.isAnonymous || false);
+        setAddLocation(initialData.includeLocation || false);
+        
+        if (initialData.images && initialData.images.length > 0) {
+            setImagePreview(initialData.images[0]);
+        }
+    }
+  }, [initialData]);
 
   // --- Refs ---
   const fileInputRef = useRef(null);
@@ -111,18 +128,22 @@ const CreatePostForm = ({ onSubmit, userAvatar }) => {
     } else {
       console.log("Form Submitted:", postData);
     }
-    setTimeout(() => {
-      setTitle("");
-      setDescription("");
-      setTags([]);
-      setSelectedStream("");
-      removeImage();
-      setIsAnonymous(false);
-      setAddLocation(false);
-      setIsSubmitting(false);
-    }, 1000);
-
-    // Reset Form
+    
+    // Only reset if NOT editing (Close modal handles reset in parent usually)
+    if (!initialData) {
+        setTimeout(() => {
+        setTitle("");
+        setDescription("");
+        setTags([]);
+        setSelectedStream("");
+        removeImage();
+        setIsAnonymous(false);
+        setAddLocation(false);
+        setIsSubmitting(false);
+        }, 1000);
+    }
+    
+    setIsSubmitting(false);
   };
 
   return (
@@ -325,7 +346,9 @@ const CreatePostForm = ({ onSubmit, userAvatar }) => {
                   : "bg-primary hover:bg-primary/90 text-med-dark shadow-md hover:shadow-lg"
               }`}
               >
-                {isSubmitting ? "Posting..." : "Post"}
+                {isSubmitting 
+    ? (initialData ? "Updating..." : "Posting...") 
+    : (initialData ? "Update Post" : "Post")}
               </button>
             </div>
           </div>
