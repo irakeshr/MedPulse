@@ -1,31 +1,20 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import PostCard from "../components/PostCard"; // Adjust path as needed
+import PostCard from "../components/PostCard";
 import DoctorModal from "../components/DoctorModal";
 import { useSelector, useDispatch } from "react-redux";
 import CreatePostForm from "../components/CreatePostForm";
-import { getDoctorProfile, getPost, userPost, editPostApi, deletePostApi } from "../../server/allApi";
+import { getDoctorProfile, getPost, userPost, editPostApi, deletePostApi, fetchAllDoctors } from "../../server/allApi";
 import { ToastContainer, toast } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
 import CustomToast from "../../components/CustomToast";
 import { setPosts } from "../../redux/postSlice";
 
-// --- MOCK DATA FOR FEED ---
-const DOCTORS = [
-  {
-    id: 1,
-    name: "Dr. A. Patel",
-    specialty: "Cardiologist",
-    image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuBWka30KoK367JQLZVMGdVbRloQfwH54LWzQpR8XuUISpovvc4TGsUdWkqMNdlPcyXzkSRDksS1QZnoqTwchBrE3N4k4x4JWlsBEW9ALwqmVe1RzD7PuHa-0nFDQNLjONwtnit_rvvo8vd8xYPDX2jJfm7UpXkHdLjjwZi0Zqqyt5nDCq76QETXKZ61uD-5WlZZAEzemKC4YwrYlf9CjpjxskyMfmhJ8W1I4bApEl04XkOXpFYIHWxz15F8__4KBdlm8msNwiWdvZc",
-    about:
-      "Dr. Patel is a leading cardiologist with over 15 years of experience in treating complex heart conditions.",
-  },
-];
-
 const FeedPage = () => {
   const dispatch = useDispatch();
   const [selectedDoctor, setSelectedDoctor] = useState(null);
+  const [doctors, setDoctors] = useState([]);
+  const [loadingDoctors, setLoadingDoctors] = useState(true);
   const post = useSelector((state) => state.post.posts);
   const searchKey = useSelector((state) => state.post.searchKey);
   const { profile, stats } = useSelector((state) => state.userDetail);
@@ -81,13 +70,10 @@ const FeedPage = () => {
 
   // --- DELETE HANDLER ---
   const handleDeletePost = async (postId) => {
-      // Optimistic UI Update (or wait for success)
-      // Usually better to confirm then delete. PostCard handles the "Confirm?" double click.
       try {
           const res = await deletePostApi(postId);
           if (res.status === 200 || res.status === 204) {
              toast(<CustomToast title="Post Deleted" message="Your post has been removed." type="success" />, { closeButton: false });
-             // Update Redux
              const updatedPosts = post.filter(p => p._id !== postId);
              dispatch(setPosts(updatedPosts));
           }
@@ -109,11 +95,10 @@ const FeedPage = () => {
       try {
         const formData = new FormData();
         formData.append("title", data.title);
-        formData.append("description", data.description); // Backend likely maps this to content
+        formData.append("description", data.description);
         formData.append("stream", data.stream);
         formData.append("isAnonymous", String(data.isAnonymous));
         formData.append("includeLocation", data.includeLocation);
-        // formData.append("timestamp", data.timestamp); // Keep original timestamp usually? Or update? CreatePostForm sends new timestamp.
 
         data.tags.forEach((tag) => formData.append("tags[]", tag));
 
@@ -126,14 +111,11 @@ const FeedPage = () => {
         if (res.status === 200) {
             toast(<CustomToast title="Post Updated" message="Your changes have been saved." type="success" />, { closeButton: false });
             
-            // Update Redux
-            const updatedPosts = post.map(p => p._id === editingPost._id ? res.data.post : p); // Assuming API returns { post: ... }
-            // If API returns plain post or different structure, adjust. 
-            // Fallback: trigger re-fetch
             if(res.data && res.data.post){
+                 const updatedPosts = post.map(p => p._id === editingPost._id ? res.data.post : p);
                  dispatch(setPosts(updatedPosts));
             } else {
-                 setPosted(!posted); // Trigger re-fetch
+                 setPosted(!posted);
             }
             
             setEditingPost(null);
@@ -145,9 +127,21 @@ const FeedPage = () => {
       }
   };
   
-  // Close Modal Handler
   const closeEditModal = () => setEditingPost(null);
 
+  const fetchDoctors = async () => {
+    try {
+      setLoadingDoctors(true);
+      const response = await fetchAllDoctors('?limit=5');
+      if (response.data?.doctors) {
+        setDoctors(response.data.doctors.slice(0, 5));
+      }
+    } catch (error) {
+      console.error("Error fetching doctors:", error);
+    } finally {
+      setLoadingDoctors(false);
+    }
+  };
 
   useEffect(() => {
     const fetchPosts = async () => {
@@ -160,6 +154,7 @@ const FeedPage = () => {
     };
 
     fetchPosts();
+    fetchDoctors();
   }, [posted, dispatch, searchKey]);
 
   return (
@@ -294,35 +289,67 @@ const FeedPage = () => {
               <h3 className="font-bold text-med-dark dark:text-white">
                 Verified Doctors
               </h3>
+              <Link
+                to="/doctors"
+                className="text-xs font-semibold text-primary hover:text-primary/80"
+              >
+                View All
+              </Link>
             </div>
           </div>
 
-          {/* KNKN */}
-
           <div className="flex flex-col gap-4">
-            {DOCTORS.map((doc) => (
-              <div
-                key={doc.id}
-                className="flex items-center gap-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-[#2a3838] p-2 rounded-lg transition-colors"
-                onClick={() => setSelectedDoctor(doc)} // <--- CLICK TRIGGER
-              >
-                <div
-                  className="bg-center bg-no-repeat bg-cover rounded-full size-10"
-                  style={{ backgroundImage: `url('${doc.image}')` }}
-                ></div>
-                <div className="flex-1">
-                  <span className="text-sm font-semibold text-med-dark dark:text-white block">
-                    {doc.name}
-                  </span>
-                  <span className="text-xs text-med-text-secondary dark:text-gray-400">
-                    {doc.specialty}
-                  </span>
-                </div>
+            {loadingDoctors ? (
+              <div className="space-y-3">
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="flex items-center gap-3 p-2 animate-pulse">
+                    <div className="size-10 rounded-full bg-gray-200 dark:bg-gray-700"></div>
+                    <div className="flex-1">
+                      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-24 mb-2"></div>
+                      <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-16"></div>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
+            ) : doctors.length > 0 ? (
+              doctors.map((doc) => (
+                <div
+                  key={doc._id}
+                  className="flex items-center gap-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-[#2a3838] p-2 rounded-lg transition-colors"
+                  onClick={() => setSelectedDoctor({
+                    id: doc._id,
+                    name: doc.displayName,
+                    specialty: doc.specialization,
+                    image: doc.profileImage,
+                    about: doc.bio || ''
+                  })}
+                >
+                  <div
+                    className="bg-center bg-no-repeat bg-cover rounded-full size-10"
+                    style={{ backgroundImage: doc.profileImage ? `url('${doc.profileImage}')` : 'none' }}
+                  >
+                    {!doc.profileImage && (
+                      <div className="size-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm">
+                        {doc.displayName?.charAt(0) || 'D'}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <span className="text-sm font-semibold text-med-dark dark:text-white block">
+                      {doc.displayName}
+                    </span>
+                    <span className="text-xs text-med-text-secondary dark:text-gray-400">
+                      {doc.specialization}
+                    </span>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-med-text-secondary dark:text-gray-400 text-center py-4">
+                No doctors available
+              </p>
+            )}
           </div>
-
-          {/* KMKN */}
         </aside>
 
         <DoctorModal

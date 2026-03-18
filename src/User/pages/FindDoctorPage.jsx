@@ -85,23 +85,45 @@ export default function FindDoctorPage() {
   const [selectedDoctor, setSelectedDoctor] = useState(null);
   const [doctors, setDoctors] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [specialization, setSpecialization] = useState('All');
+  const [debounceTimer, setDebounceTimer] = useState(null);
+
+  const loadDoctors = async (search = '', spec = 'All') => {
+    try {
+      const params = new URLSearchParams();
+      if (search) params.append('search', search);
+      if (spec !== 'All') params.append('specialization', spec);
+      params.append('verifiedOnly', 'true');
+      
+      const respond = await fetchAllDoctors(params.toString() ? `?${params.toString()}` : '');
+      if (respond.data.success) {
+        setDoctors(respond.data.doctors);
+      }
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const loadDoctors = async () => {
-      try {
-        const respond = await fetchAllDoctors();
-        if (respond.data.success) {
-          setDoctors(respond.data.doctors);
-        }
-      } catch (error) {
-        console.log(error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     loadDoctors();
   }, []);
+
+  const handleSearch = (value) => {
+    setSearchQuery(value);
+    if (debounceTimer) clearTimeout(debounceTimer);
+    const timer = setTimeout(() => {
+      loadDoctors(value, specialization);
+    }, 300);
+    setDebounceTimer(timer);
+  };
+
+  const handleSpecializationChange = (value) => {
+    setSpecialization(value);
+    loadDoctors(searchQuery, value);
+  };
 
   // Filter only verified doctors
   const verifiedDoctors = doctors.filter(doc => doc.verificationStatus === 'verified');
@@ -125,6 +147,8 @@ export default function FindDoctorPage() {
               className="block w-full pl-12 pr-4 py-3.5 bg-white dark:bg-[#1a2c2c] border border-[#e5e7eb] dark:border-[#2a3838] rounded-xl text-med-dark dark:text-white placeholder:text-med-text-secondary dark:placeholder:text-gray-500 focus:ring-2 focus:ring-primary/50 focus:border-primary/50 shadow-sm text-sm transition-all"
               placeholder="Search by doctor's name, specialization, or condition..."
               type="text"
+              value={searchQuery}
+              onChange={(e) => handleSearch(e.target.value)}
             />
             <div className="absolute inset-y-0 right-3 flex items-center">
               <button className="p-1.5 rounded-lg hover:bg-med-gray dark:hover:bg-[#253636] text-med-text-secondary dark:text-gray-400 transition-colors">
@@ -136,12 +160,15 @@ export default function FindDoctorPage() {
 
         {/* --- Filters --- */}
         <div className="flex flex-wrap items-center gap-3">
-          <FilterSelect label="Specialization">
-            <option>General Physician</option>
-            <option>Cardiologist</option>
-            <option>Dermatologist</option>
-            <option>Neurologist</option>
-            <option>Pediatrician</option>
+          <FilterSelect label="Specialization" value={specialization} onChange={handleSpecializationChange}>
+            <option value="All">All Specializations</option>
+            <option value="General Physician">General Physician</option>
+            <option value="Cardiologist">Cardiologist</option>
+            <option value="Dermatologist">Dermatologist</option>
+            <option value="Neurologist">Neurologist</option>
+            <option value="Pediatrician">Pediatrician</option>
+            <option value="Orthopedic">Orthopedic</option>
+            <option value="Ophthalmologist">Ophthalmologist</option>
           </FilterSelect>
           <FilterSelect label="Availability">
             <option>Available Today</option>
@@ -256,9 +283,13 @@ export default function FindDoctorPage() {
 
 // --- SUB-COMPONENTS ---
 
-const FilterSelect = ({ label, children }) => (
+const FilterSelect = ({ label, children, value, onChange }) => (
   <div className="relative">
-    <select className="appearance-none bg-white dark:bg-[#1a2c2c] border border-[#e5e7eb] dark:border-[#2a3838] text-med-dark dark:text-gray-300 py-2 pl-4 pr-10 rounded-xl text-sm font-medium hover:border-med-text-secondary focus:ring-1 focus:ring-primary focus:border-primary cursor-pointer shadow-sm transition-colors">
+    <select 
+      className="appearance-none bg-white dark:bg-[#1a2c2c] border border-[#e5e7eb] dark:border-[#2a3838] text-med-dark dark:text-gray-300 py-2 pl-4 pr-10 rounded-xl text-sm font-medium hover:border-med-text-secondary focus:ring-1 focus:ring-primary focus:border-primary cursor-pointer shadow-sm transition-colors"
+      value={value}
+      onChange={(e) => onChange && onChange(e.target.value)}
+    >
       <option>{label}</option>
       {children}
     </select>

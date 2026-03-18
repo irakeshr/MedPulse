@@ -27,8 +27,8 @@ export const updateProfile = async (reqBody) => {
 export const getUserProfile = async () => {
   return await CommonApi("GET", `${SERVER_URL}/user/get-profile`);
 };
-export const fetchAllDoctors = async () => {
-  return await CommonApi("GET", `${SERVER_URL}/user/get-allDoctors`);
+export const fetchAllDoctors = async (queryParams = '') => {
+  return await CommonApi("GET", `${SERVER_URL}/user/get-allDoctors${queryParams}`);
 };
 export const fetchOneDoctor = async (doctorId) => {
   return await CommonApi("GET", `${SERVER_URL}/user/${doctorId}/get-OneDoctor`);
@@ -174,4 +174,25 @@ export const getPaymentDetails = async (sessionId) => {
 
 export const verifyPaymentStatus = async (sessionId) => {
   return await CommonApi("GET", `${SERVER_URL}/payment/${sessionId}`);
+};
+
+// Doctor Saved Cases API
+export const getSolvedCasesApi = async () => {
+  return await CommonApi("GET", `${SERVER_URL}/doctor/solved-cases`);
+};
+
+export const saveCaseApi = async (postId) => {
+  return await CommonApi("POST", `${SERVER_URL}/doctor/save-case/${postId}`);
+};
+
+export const removeCaseApi = async (postId) => {
+  return await CommonApi("DELETE", `${SERVER_URL}/doctor/remove-case/${postId}`);
+};
+
+export const respondToPostApi = async (postId, content) => {
+  return await CommonApi("POST", `${SERVER_URL}/doctor/posts/${postId}/respond`, { content });
+};
+
+export const resolvePostApi = async (postId) => {
+  return await CommonApi("PUT", `${SERVER_URL}/doctor/posts/${postId}/resolve`);
 };

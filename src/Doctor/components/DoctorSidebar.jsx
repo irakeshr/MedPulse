@@ -8,31 +8,37 @@ const NAV_LINKS = [
     path: "/doctor/dashboard", 
     label: "Dashboard", 
     icon: "dashboard",
-    requiresVerification: false // Everyone can see dashboard (usually)
+    requiresVerification: false
+  },
+  { 
+    path: "/doctor/appointments", 
+    label: "My Appointments", 
+    icon: "calendar_month", 
+    requiresVerification: true
+  },
+  { 
+    path: "/doctor/schedule", 
+    label: "Manage Schedule", 
+    icon: "schedule", 
+    requiresVerification: true
   },
   { 
     path: "/doctor/reviews", 
     label: "My Reviews", 
     icon: "forum", 
-    requiresVerification: true // LOCKED
+    requiresVerification: true
   },
   { 
     path: "/doctor/saved", 
     label: "Saved Cases", 
     icon: "bookmark", 
-    requiresVerification: true // LOCKED
-  },
-  { 
-    path: "/doctor/schedule", 
-    label: "Schedule", 
-    icon: "calendar_month", 
-    requiresVerification: true // LOCKED
+    requiresVerification: true
   },
   { 
     path: "/doctor/settings", 
     label: "Settings", 
     icon: "settings",
-    requiresVerification: false // Settings usually open to edit profile
+    requiresVerification: false
   },
 ];
 

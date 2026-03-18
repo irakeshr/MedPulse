@@ -5,6 +5,7 @@ import postReducer from "./postSlice";
 import commentReducer from "./commentSlice"
 import doctorReducer from "./doctorSlicer"
 import adminReducer from "./adminSlice"
+import notificationReducer from "./notificationSlice"
 
 export const store = configureStore({
     reducer:{
@@ -13,7 +14,8 @@ export const store = configureStore({
        post:postReducer,
        comment:commentReducer,
        doctor:doctorReducer,
-       admin:adminReducer
+       admin:adminReducer,
+       notifications:notificationReducer
     }
    
 

@@ -1,15 +1,33 @@
 import { Link, useLocation } from "react-router-dom";
+import { useState, useEffect } from "react";
+import axios from "axios";
 
 const UserSideBar = () => {
   const location = useLocation();
+  const [upcomingCount, setUpcomingCount] = useState(0);
 
-  // Helper: Determine active styling for standard nav items
+  useEffect(() => {
+    const fetchUpcomingCount = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await axios.get("http://localhost:5000/api/user/appointments", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.data.success) {
+          setUpcomingCount(res.data.upcoming?.length || 0);
+        }
+      } catch (err) {
+        console.error("Error fetching appointment count:", err);
+      }
+    };
+    fetchUpcomingCount();
+  }, [location.pathname]);
+
   const active = (path) =>
     location.pathname === path
       ? "bg-primary/10 text-med-dark dark:text-white font-medium"
       : "text-med-text-secondary dark:text-gray-400 hover:bg-med-gray dark:hover:bg-[#253636] font-medium transition-colors";
 
-  // Helper: Determine active icon styling
   const activeIcon = (path) =>
     location.pathname === path ? "text-primary fill" : "";
 
@@ -21,6 +39,21 @@ const UserSideBar = () => {
         <Link to="/me" className={`flex items-center gap-3 px-4 py-3 rounded-xl ${active("/me")}`}>
           <span className={`material-symbols-outlined ${activeIcon("/me")}`}>home</span>
           <span>Home Feed</span>
+        </Link>
+
+        <Link to="/my-appointments" className={`flex items-center gap-3 px-4 py-3 rounded-xl ${active("/my-appointments")}`}>
+          <span className={`material-symbols-outlined ${activeIcon("/my-appointments")}`}>calendar_month</span>
+          <span>My Appointments</span>
+          {upcomingCount > 0 && (
+            <span className="ml-auto bg-primary text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+              {upcomingCount}
+            </span>
+          )}
+        </Link>
+
+        <Link to="/doctors" className={`flex items-center gap-3 px-4 py-3 rounded-xl ${active("/doctors")}`}>
+          <span className={`material-symbols-outlined ${activeIcon("/doctors")}`}>stethoscope</span>
+          <span>Find Doctors</span>
         </Link>
 
         <Link to="/posts" className={`flex items-center gap-3 px-4 py-3 rounded-xl ${active("/posts")}`}>
@@ -42,54 +75,30 @@ const UserSideBar = () => {
           <span className={`material-symbols-outlined ${activeIcon("/profile")}`}>person</span>
           <span>Profile</span>
         </Link>
+      </div>
 
-        {/* Doctors Link (Distinct Style based on HTML) */}
-        <Link to="/doctors" className={`flex items-center gap-3 px-4 py-3 rounded-xl ${active("/doctors")}`}>
-          <span className={`material-symbols-outlined ${activeIcon("/doctors")}`}>stethoscope</span>
-          <span>Doctors</span>
+      {/* --- APPOINTMENTS QUICK CARD --- */}
+      <div className="mt-4 px-4">
+        <Link to="/my-appointments">
+          <div className={`bg-white dark:bg-[#1a2c2c] p-4 rounded-xl border ${active("/my-appointments").includes("bg-primary") ? "border-primary shadow-md" : "border-med-gray dark:border-[#2a3838] hover:border-primary/50"} cursor-pointer transition-all shadow-sm`}>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center justify-center size-12 rounded-full bg-blue-50 text-blue-500 dark:bg-blue-900/20 dark:text-blue-400">
+                <span className="material-symbols-outlined">event_available</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <h4 className="text-sm font-bold text-med-dark dark:text-white">My Appointments</h4>
+                <p className="text-xs text-med-text-secondary dark:text-gray-400">
+                  {upcomingCount > 0 ? `${upcomingCount} upcoming visit${upcomingCount > 1 ? "s" : ""}` : "No upcoming visits"}
+                </p>
+              </div>
+              <span className="material-symbols-outlined text-med-text-secondary dark:text-gray-400">chevron_right</span>
+            </div>
+          </div>
         </Link>
       </div>
 
-      {/* --- QUICK ACCESS SECTION (New Feature) --- */}
-      <div className="mt-6 px-4">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-med-text-secondary dark:text-gray-500">Quick Access</h3>
-        </div>
-        <div className="flex flex-col gap-3">
-          {/* Card 1: Appointments */}
-          <Link to="/appointments">
-
-           <div className="bg-white dark:bg-[#1a2c2c] p-3 rounded-xl border border-med-gray dark:border-[#2a3838] hover:border-primary/50 cursor-pointer transition-colors shadow-sm">
-            <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center size-10 rounded-full bg-blue-50 text-blue-500 dark:bg-blue-900/20 dark:text-blue-400">
-                <span className="material-symbols-outlined">calendar_month</span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <h4 className="text-sm font-semibold text-med-dark dark:text-white truncate">Appointments</h4>
-                <p className="text-xs text-med-text-secondary dark:text-gray-400 truncate">No upcoming visits</p>
-              </div>
-            </div>
-          </div>
-          </Link>
-         
-          
-          {/* Card 2: History */}
-          <div className="bg-white dark:bg-[#1a2c2c] p-3 rounded-xl border border-med-gray dark:border-[#2a3838] hover:border-primary/50 cursor-pointer transition-colors shadow-sm">
-            <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center size-10 rounded-full bg-teal-50 text-teal-500 dark:bg-teal-900/20 dark:text-teal-400">
-                <span className="material-symbols-outlined">history</span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <h4 className="text-sm font-semibold text-med-dark dark:text-white truncate">History</h4>
-                <p className="text-xs text-med-text-secondary dark:text-gray-400 truncate">View past consultations</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* --- HEALTH TAGS SECTION --- */}
-      <div className="mt-8 px-4 pb-4">
+      <div className="mt-4 px-4 pb-4">
         <p className="text-xs font-semibold uppercase tracking-wider text-med-text-secondary dark:text-gray-500 mb-4">
           Your Health Tags
         </p>

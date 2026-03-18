@@ -18,6 +18,7 @@ import PatientFeedback from './Doctor/pages/PatientFeedback';
 import SavedCases from './Doctor/pages/SavedCases';
 import SchedulePage from './Doctor/pages/SchedulePage';
 import DoctorSettings from './Doctor/pages/DoctorSettings';
+import DoctorAppointments from './Doctor/pages/DoctorAppointments';
 import AdminDashboard from './Admin/pages/AdminDashboard';
 import AdminLayout from './Admin/pages/AdminLayout';
 import UserSideBar from './User/components/UserSideBar';
@@ -74,8 +75,9 @@ const App = () => {
       
     
        <Route element={<DoctorRoute/>}>
- <Route element={<DoctorLayout />}>
+        <Route element={<DoctorLayout />}>
           <Route path="/doctor/dashboard" element={<DoctorDashboard />} />
+          <Route path="/doctor/appointments" element={<DoctorAppointments />} />
           <Route path="/doctor/reviews" element={<PatientFeedback />} />
           <Route path="/doctor/saved" element={<SavedCases />} />
           <Route path="/doctor/schedule" element={<SchedulePage />} />
