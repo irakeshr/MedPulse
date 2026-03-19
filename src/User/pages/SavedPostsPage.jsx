@@ -79,14 +79,21 @@ export default function SavedPostsPage() {
      apiData.append('title', formData.title);
      apiData.append('description', formData.description);
      apiData.append('stream', formData.stream);
+     apiData.append('severity', formData.severity || "Mild");
      apiData.append('isAnonymous', String(formData.isAnonymous));
      apiData.append("includeLocation", formData.includeLocation);
+     apiData.append("location", formData.location || "");
 
      if (Array.isArray(formData.tags)) {
         formData.tags.forEach((tag) => apiData.append("tags[]", tag));
      }
      
-     if (formData.image) apiData.append('image', formData.image);
+     // Handle multiple images
+     if (formData.images && formData.images.length > 0) {
+       formData.images.forEach((image) => {
+         apiData.append("images", image);
+       });
+     }
      
     const loadingToast = toast.loading("Updating post...");
 

@@ -14,6 +14,14 @@ const MEDICAL_STREAMS = [
   "Psychiatry",
 ];
 
+// Severity levels
+const SEVERITY_LEVELS = [
+  { value: "Mild", color: "text-green-600", bg: "bg-green-50" },
+  { value: "Medium", color: "text-yellow-600", bg: "bg-yellow-50" },
+  { value: "High", color: "text-orange-600", bg: "bg-orange-50" },
+  { value: "Critical", color: "text-red-600", bg: "bg-red-50" },
+];
+
 const CreatePostForm = ({ onSubmit, userAvatar, initialData = null }) => {
   const navigate = useNavigate();
   const { profile } = useSelector((state) => state.userDetail);
@@ -46,8 +54,10 @@ const CreatePostForm = ({ onSubmit, userAvatar, initialData = null }) => {
   const [selectedStream, setSelectedStream] = useState("");
   const [tags, setTags] = useState([]); // Array for multiple tags
 
-  const [selectedImage, setSelectedImage] = useState(null);
-  const [imagePreview, setImagePreview] = useState(null);
+  const [selectedImages, setSelectedImages] = useState([]);
+  const [imagePreviews, setImagePreviews] = useState([]);
+  const [severity, setSeverity] = useState("Mild");
+  const [postLocation, setPostLocation] = useState("");
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [addLocation, setAddLocation] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -56,14 +66,16 @@ const CreatePostForm = ({ onSubmit, userAvatar, initialData = null }) => {
   useEffect(() => {
     if (initialData) {
         setTitle(initialData.title || "");
-        setDescription(initialData.content || ""); // Note: backend uses 'content', form uses 'description'
+        setDescription(initialData.content || "");
         setSelectedStream(initialData.symptomType || "");
         setTags(initialData.tags || []);
+        setSeverity(initialData.severity || "Mild");
+        setPostLocation(initialData.location || "");
         setIsAnonymous(initialData.isAnonymous || false);
         setAddLocation(initialData.includeLocation || false);
         
         if (initialData.images && initialData.images.length > 0) {
-            setImagePreview(initialData.images[0]);
+            setImagePreviews(initialData.images);
         }
     }
   }, [initialData]);
@@ -75,17 +87,46 @@ const CreatePostForm = ({ onSubmit, userAvatar, initialData = null }) => {
   const handleImageClick = () => fileInputRef.current.click();
 
   const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setSelectedImage(file);
-      setImagePreview(URL.createObjectURL(file));
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+    
+    // Limit to 5 images
+    if (selectedImages.length + files.length > 5) {
+      toast.error("Maximum 5 images allowed");
+      return;
     }
+    
+    // Validate file types
+    const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    const invalidFiles = files.filter(file => !validTypes.includes(file.type));
+    if (invalidFiles.length > 0) {
+      toast.error("Only image files (JPG, PNG, GIF, WebP) are allowed");
+      return;
+    }
+    
+    // Validate file size (max 5MB per image)
+    const maxSize = 5 * 1024 * 1024;
+    const oversizedFiles = files.filter(file => file.size > maxSize);
+    if (oversizedFiles.length > 0) {
+      toast.error("Each image must be less than 5MB");
+      return;
+    }
+    
+    setSelectedImages([...selectedImages, ...files]);
+    
+    // Create previews
+    const newPreviews = files.map(file => URL.createObjectURL(file));
+    setImagePreviews([...imagePreviews, ...newPreviews]);
+    
+    // Reset input
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  const removeImage = () => {
-    setSelectedImage(null);
-    setImagePreview(null);
-    if (fileInputRef.current) fileInputRef.current.value = "";
+  const removeImage = (index) => {
+    const newImages = selectedImages.filter((_, i) => i !== index);
+    const newPreviews = imagePreviews.filter((_, i) => i !== index);
+    setSelectedImages(newImages);
+    setImagePreviews(newPreviews);
   };
 
   const handleTagInput = (e) => {
@@ -110,6 +151,12 @@ const CreatePostForm = ({ onSubmit, userAvatar, initialData = null }) => {
       return;
     }
 
+    // Validate location if toggled
+    if (addLocation && !postLocation.trim()) {
+      toast.error("Please enter your location.");
+      return;
+    }
+
     setIsSubmitting(true);
 
     const postData = {
@@ -117,7 +164,9 @@ const CreatePostForm = ({ onSubmit, userAvatar, initialData = null }) => {
       description,
       stream: selectedStream,
       tags,
-      image: selectedImage,
+      images: selectedImages,
+      severity,
+      location: addLocation ? postLocation : "",
       isAnonymous,
       includeLocation: addLocation,
       timestamp: new Date().toISOString(),
@@ -136,7 +185,10 @@ const CreatePostForm = ({ onSubmit, userAvatar, initialData = null }) => {
         setDescription("");
         setTags([]);
         setSelectedStream("");
-        removeImage();
+        setSelectedImages([]);
+        setImagePreviews([]);
+        setSeverity("Mild");
+        setPostLocation("");
         setIsAnonymous(false);
         setAddLocation(false);
         setIsSubmitting(false);
@@ -245,6 +297,39 @@ const CreatePostForm = ({ onSubmit, userAvatar, initialData = null }) => {
               />
             </div>
 
+            {/* Severity Selector */}
+            <div className="flex items-center gap-2 mt-2">
+              <span className="text-xs text-med-text-secondary dark:text-gray-400 font-medium">Severity:</span>
+              <div className="flex gap-1">
+                {SEVERITY_LEVELS.map((level) => (
+                  <button
+                    key={level.value}
+                    onClick={() => setSeverity(level.value)}
+                    className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
+                      severity === level.value
+                        ? `${level.color} ${level.bg} border-2 border-current`
+                        : "text-med-text-secondary dark:text-gray-400 hover:bg-med-gray dark:hover:bg-[#253636]"
+                    }`}
+                  >
+                    {level.value}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Location Input (shown when toggled) */}
+            {addLocation && (
+              <div className="mt-2">
+                <input
+                  type="text"
+                  value={postLocation}
+                  onChange={(e) => setPostLocation(e.target.value)}
+                  placeholder="Enter your location (city, area, etc.)"
+                  className="w-full px-3 py-2 bg-med-gray dark:bg-[#253636] rounded-lg text-xs font-medium text-med-dark dark:text-white placeholder:text-med-text-secondary dark:placeholder:text-gray-500 border border-transparent focus:border-primary/50 outline-none"
+                />
+              </div>
+            )}
+
             {/* Display Tags */}
             {tags.length > 0 && (
               <div className="flex flex-wrap gap-2 mt-2">
@@ -267,22 +352,31 @@ const CreatePostForm = ({ onSubmit, userAvatar, initialData = null }) => {
               </div>
             )}
 
-            {/* Image Preview */}
-            {imagePreview && (
-              <div className="relative mt-2 w-fit">
-                <img
-                  src={imagePreview}
-                  alt="Upload preview"
-                  className="h-20 w-20 object-cover rounded-lg border border-gray-200 dark:border-gray-600"
-                />
-                <button
-                  onClick={removeImage}
-                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-0.5 hover:bg-red-600 shadow-sm"
-                >
-                  <span className="material-symbols-outlined text-[12px] block">
-                    close
-                  </span>
-                </button>
+            {/* Multiple Image Previews */}
+            {imagePreviews.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-2">
+                {imagePreviews.map((preview, index) => (
+                  <div key={index} className="relative">
+                    <img
+                      src={preview}
+                      alt={`Upload preview ${index + 1}`}
+                      className="h-20 w-20 object-cover rounded-lg border border-gray-200 dark:border-gray-600"
+                    />
+                    <button
+                      onClick={() => removeImage(index)}
+                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-0.5 hover:bg-red-600 shadow-sm"
+                    >
+                      <span className="material-symbols-outlined text-[12px] block">
+                        close
+                      </span>
+                    </button>
+                    {index === 0 && (
+                      <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-primary text-white text-[10px] px-1 rounded">
+                        Cover
+                      </span>
+                    )}
+                  </div>
+                ))}
               </div>
             )}
 
@@ -291,6 +385,7 @@ const CreatePostForm = ({ onSubmit, userAvatar, initialData = null }) => {
               ref={fileInputRef}
               onChange={handleFileChange}
               accept="image/*"
+              multiple
               hidden
             />
 
@@ -299,15 +394,21 @@ const CreatePostForm = ({ onSubmit, userAvatar, initialData = null }) => {
               <div className="flex gap-2">
                 <button
                   onClick={handleImageClick}
-                  className="p-2 rounded-lg hover:bg-med-gray dark:hover:bg-[#253636] text-med-text-secondary dark:text-gray-400 transition-colors"
+                  className="p-2 rounded-lg hover:bg-med-gray dark:hover:bg-[#253636] text-med-text-secondary dark:text-gray-400 transition-colors relative"
+                  title={selectedImages.length > 0 ? `${selectedImages.length} images selected` : "Add images (up to 5)"}
                 >
                   <span
                     className={`material-symbols-outlined text-[20px] ${
-                      selectedImage ? "text-primary" : ""
+                      selectedImages.length > 0 ? "text-primary" : ""
                     }`}
                   >
                     image
                   </span>
+                  {selectedImages.length > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-primary text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center">
+                      {selectedImages.length}
+                    </span>
+                  )}
                 </button>
                 <button
                   onClick={() => setAddLocation(!addLocation)}

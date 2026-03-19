@@ -29,14 +29,19 @@ const FeedPage = () => {
       formData.append("title", data.title);
       formData.append("description", data.description);
       formData.append("stream", data.stream);
+      formData.append("severity", data.severity);
       formData.append("isAnonymous", String(data.isAnonymous));
       formData.append("includeLocation", data.includeLocation);
+      formData.append("location", data.location || "");
       formData.append("timestamp", data.timestamp);
 
       data.tags.forEach((tag) => formData.append("tags[]", tag));
 
-      if (data.image) {
-        formData.append("image", data.image);
+      // Handle multiple images
+      if (data.images && data.images.length > 0) {
+        data.images.forEach((image) => {
+          formData.append("images", image);
+        });
       }
 
       const res = await userPost(formData);
@@ -97,13 +102,18 @@ const FeedPage = () => {
         formData.append("title", data.title);
         formData.append("description", data.description);
         formData.append("stream", data.stream);
+        formData.append("severity", data.severity || "Mild");
         formData.append("isAnonymous", String(data.isAnonymous));
         formData.append("includeLocation", data.includeLocation);
+        formData.append("location", data.location || "");
 
         data.tags.forEach((tag) => formData.append("tags[]", tag));
 
-        if (data.image) {
-             formData.append("image", data.image);
+        // Handle multiple images
+        if (data.images && data.images.length > 0) {
+          data.images.forEach((image) => {
+            formData.append("images", image);
+          });
         }
 
         const res = await editPostApi(editingPost._id, formData);

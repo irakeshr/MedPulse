@@ -1,9 +1,10 @@
 import React from 'react';
 import { useState,useEffect } from 'react';
-import { getAllDoctorsProfile, VerifyDoctor } from '../../server/allApi';
+import { getAllDoctorsProfile, VerifyDoctor, DeleteUser } from '../../server/allApi';
 import { formatDistanceToNow, isValid } from "date-fns";
 import { toast } from 'react-toastify';
 import CustomToast from '../../components/CustomToast';
+import { useNavigate } from 'react-router-dom';
 
 
 // --- MOCK DATA ---
@@ -16,6 +17,7 @@ const STATS = [
 
 export default function AdminVerification() {
     const [doctorProfile, setDoctorProfile] = useState([]);
+    const navigate = useNavigate();
   
     
       const fetchDoctorProfile=async()=>{
@@ -57,16 +59,66 @@ export default function AdminVerification() {
       }
       
     } catch (error) {
-      <CustomToast
-            title={`${status}`}
-            message={error?.respond?.message}
-            type= {status == "verified" ? "success" :"error"}
-          />
+      toast(
+        <CustomToast
+          title={`${status}`}
+          message={error?.response?.data?.message || "An error occurred"}
+          type= {status == "verified" ? "success" :"error"}
+        />
+      );
       console.error(error);
       
     }
 
   }
+
+  const handleResubmitRequest = async (doctorId) => {
+    try {
+      const respond = await VerifyDoctor(doctorId, { status: "pending" });
+      if (respond.status === 200) {
+        toast(
+          <CustomToast
+            title="Resubmission Requested"
+            message="Doctor has been notified to resubmit their credentials"
+            type="success"
+          />
+        );
+        fetchDoctorProfile();
+      }
+    } catch (error) {
+      toast(
+        <CustomToast
+          title="Failed"
+          message={error?.response?.data?.message || "Failed to request resubmission"}
+          type="error"
+        />
+      );
+    }
+  };
+
+  const handleDeleteDoctor = async (doctorId, doctorName) => {
+    try {
+      const respond = await DeleteUser(doctorId, { username: doctorName });
+      if (respond.status === 200) {
+        toast(
+          <CustomToast
+            title="Deleted"
+            message={respond?.data?.message}
+            type="success"
+          />
+        );
+        fetchDoctorProfile();
+      }
+    } catch (error) {
+      toast(
+        <CustomToast
+          title="Failed"
+          message={error?.response?.data?.message || "Failed to delete doctor"}
+          type="error"
+        />
+      );
+    }
+  };
  
 
   return (
@@ -173,7 +225,7 @@ export default function AdminVerification() {
                         <div className="flex items-center gap-3">
                           <div className="bg-center bg-no-repeat bg-cover rounded-full size-8" style={{ backgroundImage:`url("${value.profileImage}")`}}></div>
                           <div>
-                            <div className="font-semibold text-med-dark dark:text-white">{value.fullName}</div>
+                            <div className="font-semibold text-med-dark dark:text-white">{value.displayName}</div>
                             <div className="text-xs text-med-text-secondary"> {value.user.email}</div>
                           </div>
                         </div>
@@ -221,7 +273,7 @@ export default function AdminVerification() {
           <span className="material-symbols-outlined text-[20px]">refresh</span>
         </button>
         <button
-          onClick={() => VerifyDoctor(value._id, value.username)}
+          onClick={() => handleDeleteDoctor(value.user?._id || value._id, value.displayName)}
           className="p-1.5 rounded-lg text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
           title="Delete Doctor"
         >
@@ -241,6 +293,7 @@ export default function AdminVerification() {
     <button 
       className="p-1.5 rounded-lg text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 transition-colors ml-1" 
       title="View Details"
+      onClick={() => navigate("/admin/users")}
     >
       <span className="material-symbols-outlined text-[20px]">visibility</span>
     </button>

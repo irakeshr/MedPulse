@@ -27,12 +27,14 @@ import AdminVerification from './Admin/pages/AdminVerification';
 import AdminModeration from './Admin/pages/AdminModeration';
 import AdminTopics from './Admin/pages/AdminTopics';
 import AdminSettings from './Admin/pages/AdminSettings';
+import AdminCareers from './Admin/pages/AdminCareers';
 import ProtectedAdmin from './routes/ProtectedAdmin';
 import RoleSelection from './components/RoleSelection';
 import AppointmentBooking from './User/pages/AppointmentBooking';
 import PaymentSuccess from './User/pages/PaymentSuccess';
 import PaymentFailed from './User/pages/PaymentFailed';
 import MyAppointments from './User/pages/MyAppointments';
+import CareerPage from './pages/CareerPage';
 import { ToastContainer } from 'react-toastify';
 
 const App = () => {
@@ -44,6 +46,7 @@ const App = () => {
 
       {/* PUBLIC ROUTE (Login + Register) */}
       <Route path="/" element={<HomePage />} />
+      <Route path="/careers" element={<CareerPage />} />
       <Route path="/role-selection/:emailID" element={<RoleSelection/>} />
       <Route path="/payment-success" element={<PaymentSuccess />} />
           <Route path="/payment-failed" element={<PaymentFailed  />} />
@@ -94,8 +97,9 @@ const App = () => {
  <Route path="/admin/users" element={<AdminUsers/>} />
  <Route path="/admin/verify" element={<AdminVerification/>} />
  <Route path="/admin/moderation" element={<AdminModeration/>} />
- <Route path="/admin/topics" element={<AdminTopics/>} />
- <Route path="/admin/settings" element={<AdminSettings/>} />
+  <Route path="/admin/topics" element={<AdminTopics/>} />
+  <Route path="/admin/careers" element={<AdminCareers/>} />
+  <Route path="/admin/settings" element={<AdminSettings/>} />
  
  
  </Route>  

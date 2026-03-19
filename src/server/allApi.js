@@ -196,3 +196,44 @@ export const respondToPostApi = async (postId, content) => {
 export const resolvePostApi = async (postId) => {
   return await CommonApi("PUT", `${SERVER_URL}/doctor/posts/${postId}/resolve`);
 };
+
+// Career APIs
+export const getAllCareersApi = async (queryParams = '') => {
+  return await CommonApi("GET", `${SERVER_URL}/careers${queryParams}`);
+};
+
+export const getCareerByIdApi = async (careerId) => {
+  return await CommonApi("GET", `${SERVER_URL}/careers/${careerId}`);
+};
+
+export const applyToCareerApi = async (careerId, applicationData) => {
+  return await CommonApi("POST", `${SERVER_URL}/careers/${careerId}/apply`, applicationData);
+};
+
+export const getAllCareersAdminApi = async () => {
+  return await CommonApi("GET", `${SERVER_URL}/careers/admin/all`);
+};
+
+export const createCareerApi = async (careerData) => {
+  return await CommonApi("POST", `${SERVER_URL}/careers`, careerData);
+};
+
+export const updateCareerApi = async (careerId, careerData) => {
+  return await CommonApi("PUT", `${SERVER_URL}/careers/${careerId}`, careerData);
+};
+
+export const deleteCareerApi = async (careerId) => {
+  return await CommonApi("DELETE", `${SERVER_URL}/careers/${careerId}`);
+};
+
+export const getCareerApplicationsApi = async (careerId) => {
+  return await CommonApi("GET", `${SERVER_URL}/careers/${careerId}/applications`);
+};
+
+export const updateApplicationStatusApi = async (careerId, applicationId, status) => {
+  return await CommonApi("PUT", `${SERVER_URL}/careers/${careerId}/applications/${applicationId}`, { status });
+};
+
+export const deleteApplicationApi = async (careerId, applicationId) => {
+  return await CommonApi("DELETE", `${SERVER_URL}/careers/${careerId}/applications/${applicationId}`);
+};
