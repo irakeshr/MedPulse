@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 const Header = () => {
     return (
@@ -10,11 +11,11 @@ const Header = () => {
         <path clipRule="evenodd" d="M24 4H6V17.3333V30.6667H24V44H42V30.6667V17.3333H24V4Z" fillRule="evenodd" />
       </svg>
     </div>
-    <span className="text-xl font-bold tracking-tight text-med-dark dark:text-white">MedPulse</span>
+    <Link to="/" className="text-xl font-bold tracking-tight text-med-dark dark:text-white">MedPulse</Link>
   </div>
   <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-med-text-secondary dark:text-gray-300">
     <a className="hover:text-primary dark:hover:text-white transition-colors" href="#">About Us</a>
-    <a className="hover:text-primary dark:hover:text-white transition-colors" href="#">Careers</a>
+    <Link to="/careers" className="hover:text-primary dark:hover:text-white transition-colors">Careers</Link>
     <a className="hover:text-primary dark:hover:text-white transition-colors" href="#">Contact</a>
     <a className="hover:text-primary dark:hover:text-white transition-colors" href="#">Help Center</a>
   </nav>

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useSelector,useDispatch } from "react-redux";
 import { Link } from "react-router-dom";
 import { setSearchKey } from "../../redux/postSlice";
+import { NotificationBell } from "../../components/Notifications";
 
 export default function Header() {
   const {profile}=useSelector((state)=>state.userDetail)
@@ -97,12 +98,7 @@ useEffect(() => {
           </button>
 
           {/* Notifications (Only if Logged In) */}
-          {isLoggedIn && (
-            <button className="p-2 text-med-dark dark:text-white rounded-full hover:bg-med-gray dark:hover:bg-[#253636] relative transition-colors">
-              <span className="material-symbols-outlined text-[22px]">notifications</span>
-              <span className="absolute top-2 right-2 size-2 bg-red-500 rounded-full border border-white dark:border-[#1a2c2c]"></span>
-            </button>
-          )}
+          {isLoggedIn && <NotificationBell />}
 
           {/* Auth State Switch */}
           {isLoggedIn ? (

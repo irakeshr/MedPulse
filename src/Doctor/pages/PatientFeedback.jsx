@@ -1,234 +1,377 @@
-import React from 'react';
-import ReviewCard from '../components/ReviewCard'; // Adjust path if needed
+import React, { useState, useEffect } from 'react';
+import { useSelector } from 'react-redux';
+import { getDoctorPosts, respondToPostApi } from '../../server/allApi';
+import ReviewCard from '../components/ReviewCard';
+import CustomToast from '../../components/CustomToast';
+import { ToastContainer, toast } from 'react-toastify';
 
 const PatientFeedback = () => {
-  // Mock Data for Reviews
-  const reviewsData = [
-    {
-      id: 1,
-      name: "Michael K.",
-      initials: "MK",
-      consultation: "Hypertension",
-      rating: 5,
-      time: "2 hours ago",
-      content: "Dr. Richards was incredibly thorough and explained my condition in a way that was easy to understand. He took the time to listen to my concerns about medication side effects and adjusted my prescription accordingly. Highly recommended!",
-      avatarColor: "bg-blue-100",
-      textColor: "text-blue-600",
-      doctorReply: null
-    },
-    {
-      id: 2,
-      name: "Sarah A.",
-      initials: "SA",
-      consultation: "Annual Checkup",
-      rating: 4,
-      time: "Yesterday",
-      content: "Great visit overall. The clinic is very clean and the staff is friendly. The wait time was a bit longer than expected, but Dr. Richards was very professional once I got in.",
-      avatarColor: "bg-purple-100",
-      textColor: "text-purple-600",
-      doctorReply: {
-        text: "Thank you for your feedback, Sarah. I apologize for the wait time; we had an emergency case earlier that morning. I'm glad to hear you had a positive experience otherwise.",
-        time: "1 day ago"
+  const { profile } = useSelector((state) => state.doctor);
+  const [reviews, setReviews] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [replyModal, setReplyModal] = useState({ isOpen: false, review: null });
+  const [replyContent, setReplyContent] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  const showToast = (title, message, type = 'success') => {
+    toast(
+      <CustomToast title={title} message={message} type={type} />,
+      { bodyClassName: "p-5 m-0", closeButton: false }
+    );
+  };
+
+  const fetchReviews = async () => {
+    try {
+      setLoading(true);
+      const response = await getDoctorPosts();
+      
+      if (response.data?.posts) {
+        const postsWithComments = response.data.posts.filter(
+          post => post.comments && post.comments.length > 0
+        );
+        
+        const transformedReviews = postsWithComments.flatMap(post => {
+          return post.comments.map(comment => ({
+            id: comment._id,
+            postId: post._id,
+            name: comment.isAnonymous ? 'Anonymous' : comment.author?.fullName || 'Anonymous',
+            initials: comment.isAnonymous ? '' : (comment.author?.fullName?.split(' ').map(n => n[0]).join('').toUpperCase() || 'AN'),
+            consultation: post.title || 'General Consultation',
+            rating: 5,
+            time: formatTimeAgo(comment.createdAt),
+            content: comment.content,
+            avatarUrl: comment.author?.profilePicture || null,
+            avatarColor: getRandomColor(),
+            textColor: getRandomColor(true),
+            doctorReply: comment.doctorReply || null,
+            createdAt: comment.createdAt
+          }));
+        });
+        
+        setReviews(transformedReviews);
       }
-    },
-    {
-      id: 3,
-      name: "Anonymous",
-      initials: "",
-      consultation: "Urgent Care",
-      rating: 5,
-      time: "3 days ago",
-      content: "Life saver! I was having severe chest pains and Dr. Richards saw me immediately. His calm demeanor really helped me panic less. Turns out it was severe heartburn but he ruled out everything serious very efficiently.",
-      avatarUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuBi8W3-YiMtFpj3gRq16WKGyhQYEL3CHKXPfCYawWvhIMJqnwB1YzgV0YsmO-cs2vV1L7HOxhF6Up4HkG529VthdmlVNOghA-us3fSl3ScynXd8uak9H7twE_3oi8CJnkHcguBRYk735MlE3PQjK47YEUmCIsvoKu8acpN4z7KVWOdxUMLBqq3ddnjnZqqyNqi1NBMcoVPX2cCXrEjpstp263OR4JZeUzqyzdIoyTz1h9i7jqndCsnp3FNnvPxYCMq-Z9Vkc_ZUWw4",
-      doctorReply: null
-    },
-    {
-      id: 4,
-      name: "John D.",
-      initials: "JD",
-      consultation: "General",
-      rating: 5,
-      time: "4 days ago",
-      content: "Excellent service and very professional staff.",
-      avatarColor: "bg-green-100",
-      textColor: "text-green-600",
-      doctorReply: null
-    },
-    {
-      id: 5,
-      name: "Emily R.",
-      initials: "ER",
-      consultation: "Follow-up",
-      rating: 4,
-      time: "5 days ago",
-      content: "The doctor was great but the reception was a bit chaotic.",
-      avatarColor: "bg-red-100",
-      textColor: "text-red-600",
-      doctorReply: null
+    } catch (error) {
+      console.error("Error fetching reviews:", error);
+      showToast("Error", "Failed to load reviews", "error");
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
+
+  useEffect(() => {
+    fetchReviews();
+  }, []);
+
+  const formatTimeAgo = (dateString) => {
+    if (!dateString) return 'Recently';
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now - date) / 1000);
+    
+    if (diffInSeconds < 60) return 'Just now';
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} min ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
+    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)} days ago`;
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
+
+  const getRandomColor = (textOnly = false) => {
+    const colors = [
+      { bg: 'bg-blue-100', text: 'text-blue-600' },
+      { bg: 'bg-purple-100', text: 'text-purple-600' },
+      { bg: 'bg-green-100', text: 'text-green-600' },
+      { bg: 'bg-amber-100', text: 'text-amber-600' },
+      { bg: 'bg-pink-100', text: 'text-pink-600' },
+      { bg: 'bg-teal-100', text: 'text-teal-600' }
+    ];
+    const random = colors[Math.floor(Math.random() * colors.length)];
+    return textOnly ? random.text : random.bg;
+  };
+
+  const filteredReviews = reviews.filter(review => {
+    const matchesFilter = filter === 'all' || 
+      (filter === 'replied' && review.doctorReply) ||
+      (filter === 'unreplied' && !review.doctorReply);
+    
+    const matchesSearch = searchQuery === '' || 
+      review.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      review.content.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    return matchesFilter && matchesSearch;
+  });
+
+  const stats = {
+    total: reviews.length,
+    replied: reviews.filter(r => r.doctorReply).length,
+    unreplied: reviews.filter(r => !r.doctorReply).length,
+    avgRating: reviews.length > 0 ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1) : 0
+  };
+
+  const handleReply = async () => {
+    if (!replyContent.trim() || !replyModal.review) return;
+    
+    setSubmitting(true);
+    try {
+      const response = await respondToPostApi(replyModal.review.postId, replyContent);
+      if (response.status === 200) {
+        showToast("Reply Sent", "Your response has been posted successfully", "success");
+        setReplyModal({ isOpen: false, review: null });
+        setReplyContent('');
+        fetchReviews();
+      }
+    } catch (error) {
+      console.error("Error posting reply:", error);
+      showToast("Error", "Failed to post reply", "error");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
-    <div className=" bg-white dark:bg-background-dark text-[#111818] dark:text-white font-display transition-colors duration-200 min-h-screen w-full">
+    <div className="bg-gradient-to-br from-slate-50 to-slate-100 dark:from-[#0f1a1a] dark:to-[#1a2c2c] min-h-screen">
       <div className="flex h-screen w-full overflow-hidden">
-        
-        <main className="flex-1 flex flex-col h-full overflow-hidden relative ">
-          
-          {/* Header */}
-          <header className="lg:hidden flex items-center justify-between p-4 bg-surface-light dark:bg-surface-dark border-b border-[#dbe6e6] dark:border-[#2a3c3c]">
-            <div className="flex items-center gap-2">
-              <div className="size-8 rounded-lg bg-primary flex items-center justify-center text-white">
-                <span className="material-symbols-outlined text-[20px]">cardiology</span>
-              </div>
-              <span className="font-bold text-lg dark:text-white">MedPulse</span>
-            </div>
-            <button className="p-2 text-[#111818] dark:text-white">
-              <span className="material-symbols-outlined">menu</span>
-            </button>
-          </header>
-
-          <div className="flex-1 overflow-y-auto p-4 md:p-5  lg:px-5 lg:py-5 scrollbar-hide">
-            <div className="mx-auto max-w-7xl flex flex-col gap-8">
+        <main className="flex-1 flex flex-col h-full overflow-hidden relative">
+          <div className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 scrollbar-hide">
+            <div className="mx-auto max-w-7xl">
               
-              {/* Title Section */}
-              <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
-                <div>
-                  <h1 className="text-[#111818] dark:text-white text-3xl md:text-4xl font-black tracking-tight mb-2">
-                    Patient Feedback
-                  </h1>
-                  <p className="text-secondary dark:text-gray-400 text-base md:text-lg">
-                    Manage your reputation and view <span className="font-semibold text-primary-dark dark:text-primary">152 patient reviews</span>.
-                  </p>
-                </div>
-                <div className="flex gap-3">
-                  <div className="flex items-center gap-2 px-4 py-2 bg-surface-light dark:bg-surface-dark border border-[#dbe6e6] dark:border-[#2a3c3c] rounded-xl shadow-sm">
-                    <span className="text-sm font-bold text-secondary dark:text-gray-400">Overall Rating:</span>
-                    <div className="flex items-center gap-1">
-                      <span className="text-lg font-bold text-[#111818] dark:text-white">4.9</span>
-                      <span className="material-symbols-outlined text-yellow-400 text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
-                    </div>
+              {/* Header Section */}
+              <div className="mb-8">
+                <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
+                  <div>
+                    <h1 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white mb-2">
+                      Patient Feedback
+                    </h1>
+                    <p className="text-slate-500 dark:text-slate-400">
+                      Manage your reputation and connect with patients through thoughtful responses.
+                    </p>
                   </div>
-                </div>
-              </div>
-
-              {/* Search Toolbar */}
-              <div className="flex flex-col lg:flex-row gap-4 lg:items-center justify-between bg-surface-light dark:bg-surface-dark p-2 rounded-2xl border border-[#dbe6e6] dark:border-[#2a3c3c] shadow-sm">
-                <div className="flex-1 min-w-[300px]">
-                  <label className="flex w-full items-center h-12 rounded-xl bg-[#f6f8f8] dark:bg-[#152626] px-4 focus-within:ring-2 focus-within:ring-primary/50 transition-shadow">
-                    <span className="material-symbols-outlined text-secondary dark:text-gray-500 mr-3">search</span>
-                    <input 
-                      className="w-full bg-transparent border-none text-sm text-[#111818] dark:text-white placeholder:text-secondary dark:placeholder:text-gray-500 focus:ring-0 p-0 font-medium" 
-                      placeholder="Search reviews by keywords or patient..." 
-                      type="text"
-                    />
-                  </label>
-                </div>
-                <div className="flex flex-wrap items-center gap-2 px-2">
-                  <div className="flex items-center gap-2 h-9 px-3 rounded-lg bg-[#f0f4f4] dark:bg-[#1f3333] hover:bg-[#e0e6e6] dark:hover:bg-[#2a3c3c] cursor-pointer transition-all">
-                    <span className="text-xs font-medium text-[#111818] dark:text-white">Sort: Newest First</span>
-                    <span className="material-symbols-outlined text-[16px]">expand_more</span>
-                  </div>
-                  <div className="w-px h-6 bg-[#dbe6e6] dark:bg-[#2a3c3c] mx-1"></div>
-                  <button className="flex items-center gap-2 h-9 px-3 rounded-lg bg-white dark:bg-[#1f3333] border border-[#dbe6e6] dark:border-[#2a3c3c] hover:border-primary text-xs font-medium text-[#111818] dark:text-white transition-all">
-                    5 Stars
-                  </button>
-                  <button className="flex items-center gap-2 h-9 px-3 rounded-lg bg-white dark:bg-[#1f3333] border border-[#dbe6e6] dark:border-[#2a3c3c] hover:border-primary text-xs font-medium text-[#111818] dark:text-white transition-all">
-                    Unreplied
-                  </button>
-                </div>
-              </div>
-
-              {/* Main Layout Grid */}
-              <div className="flex flex-col xl:flex-row gap-8 items-start relative scrollbar-hide">
-                
-                {/* REVIEWS COLUMN (Left - Grows) */}
-                <div className="flex-1 flex flex-col gap-4 w-full">
-                  {reviewsData.map((review) => (
-                    <ReviewCard key={review.id} data={review} />
-                  ))}
-                </div>
-
-                {/* ANALYTICS COLUMN (Right - Sticky & Fixed Size) */}
-                {/* Note: Added [&::-webkit-scrollbar]:hidden to emulate 'scrollbar-hide' if you don't have the plugin */}
-                <div className="hidden xl:block w-80 shrink-0 sticky top-4 h-[calc(100vh-2rem)] overflow-y-auto scrollbar-hide">
-                  <aside className="flex flex-col gap-6 w-full pb-8">
-                    
-                    {/* Rating Breakdown */}
-                    <div className="bg-surface-light dark:bg-surface-dark rounded-2xl border border-[#dbe6e6] dark:border-[#2a3c3c] shadow-sm p-6">
-                      <h3 className="font-bold text-[#111818] dark:text-white mb-4">Rating Breakdown</h3>
-                      <div className="flex flex-col gap-3">
-                        {[
-                          { star: 5, count: 120, pct: "85%" },
-                          { star: 4, count: 25, pct: "10%" },
-                          { star: 3, count: 4, pct: "3%" },
-                          { star: 2, count: 2, pct: "1%" },
-                          { star: 1, count: 1, pct: "1%" }
-                        ].map((item) => (
-                          <div key={item.star} className="flex items-center gap-3">
-                            <span className="text-xs font-bold text-secondary dark:text-gray-400 w-3">{item.star}</span>
-                            <span className="material-symbols-outlined text-[14px] text-yellow-400" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
-                            <div className="flex-1 h-2 bg-[#f0f4f4] dark:bg-[#1f3333] rounded-full overflow-hidden">
-                              <div className="h-full bg-primary rounded-full" style={{ width: item.pct }}></div>
-                            </div>
-                            <span className="text-xs font-medium text-secondary dark:text-gray-500 w-6 text-right">{item.count}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Trend Graph */}
-                    <div className="bg-surface-light dark:bg-surface-dark rounded-2xl border border-[#dbe6e6] dark:border-[#2a3c3c] shadow-sm p-6">
-                      <div className="flex items-center justify-between mb-2">
-                        <h3 className="font-bold text-[#111818] dark:text-white">Trend</h3>
-                        <span className="text-xs font-bold text-accent-green-text bg-accent-green px-2 py-1 rounded-md flex items-center gap-1">
-                          <span className="material-symbols-outlined text-[14px]">trending_up</span>
-                          +2.4%
-                        </span>
-                      </div>
-                      <p className="text-xs text-secondary dark:text-gray-400 mb-6">Patient satisfaction over last 30 days.</p>
-                      <div className="flex items-end gap-2 h-24 w-full">
-                        {[60, 40, 55, 75, 65, 85, 95].map((h, i) => (
-                          <div key={i} className={`w-full rounded-t-sm`} style={{height: `${h}%`, backgroundColor: i === 6 ? '#0E7C7C' : 'rgba(14, 124, 124, 0.3)'}}></div>
-                        ))}
-                      </div>
-                      <div className="flex justify-between mt-2 text-[10px] text-secondary font-medium uppercase tracking-wider">
-                        <span>Wk 1</span><span>Wk 2</span><span>Wk 3</span><span>Wk 4</span>
-                      </div>
-                    </div>
-
-                    {/* Pro Tip */}
-                    <div className="bg-gradient-to-br from-[#102222] to-[#1a3c3c] rounded-2xl p-5 text-white relative overflow-hidden">
-                      <div className="absolute -right-4 -top-4 size-24 bg-primary/20 rounded-full blur-xl"></div>
-                      <div className="relative z-10">
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="material-symbols-outlined text-primary">lightbulb</span>
-                          <h3 className="font-bold">Pro Tip</h3>
-                        </div>
-                        <p className="text-gray-300 text-sm leading-relaxed mb-3">Responding to positive reviews increases patient retention by up to 20%.</p>
-                        <button className="text-primary text-xs font-bold hover:text-white transition-colors">Learn best practices →</button>
-                      </div>
-                    </div>
-
-                    {/* Disclaimer (Added from your snippet for completeness) */}
-                    <div className="bg-blue-50 dark:bg-blue-900/10 rounded-xl p-4 border border-blue-100 dark:border-blue-900/30">
-                      <div className="flex items-start gap-3">
-                        <span className="material-symbols-outlined text-blue-600 dark:text-blue-400">info</span>
-                        <div>
-                          <h5 className="text-sm font-bold text-blue-800 dark:text-blue-300 mb-1">Confidentiality</h5>
-                          <p className="text-xs text-blue-700 dark:text-blue-200 leading-snug">
-                            Patient data is encrypted. Do not share screenshots of this dashboard.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
                   
-                  </aside>
+                  {/* Overall Rating Card */}
+                  <div className="flex items-center gap-4">
+                    <div className="bg-white dark:bg-[#1a2c2c] rounded-2xl p-4 border border-slate-200 dark:border-[#2a3c3c] shadow-sm">
+                      <div className="flex items-center gap-3">
+                        <div className="text-3xl font-black text-primary">{stats.avgRating}</div>
+                        <div className="flex flex-col">
+                          <div className="flex text-yellow-400">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <span 
+                                key={star} 
+                                className="material-symbols-outlined text-lg"
+                                style={{ fontVariationSettings: `'FILL' ${star <= Math.round(stats.avgRating) ? 1 : 0}` }}
+                              >
+                                star
+                              </span>
+                            ))}
+                          </div>
+                          <span className="text-xs text-slate-500 dark:text-slate-400">Overall Rating</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="bg-primary/10 text-primary rounded-2xl px-4 py-2 font-bold">
+                      {stats.total} Total
+                    </div>
+                  </div>
                 </div>
               </div>
+
+              {/* Stats Cards */}
+              <div className="grid grid-cols-3 gap-4 mb-8">
+                <div 
+                  className={`bg-white dark:bg-[#1a2c2c] rounded-2xl p-5 border cursor-pointer transition-all ${
+                    filter === 'all' 
+                      ? 'border-primary shadow-lg shadow-primary/10' 
+                      : 'border-slate-200 dark:border-[#2a3c3c] hover:border-primary/50'
+                  }`}
+                  onClick={() => setFilter('all')}
+                >
+                  <div className="flex items-center gap-3 mb-2">
+                    <span className="material-symbols-outlined text-slate-400">inbox</span>
+                    <span className="text-sm font-medium text-slate-500 dark:text-slate-400">All Feedback</span>
+                  </div>
+                  <div className="text-2xl font-black text-slate-900 dark:text-white">{stats.total}</div>
+                </div>
+                
+                <div 
+                  className={`bg-white dark:bg-[#1a2c2c] rounded-2xl p-5 border cursor-pointer transition-all ${
+                    filter === 'replied' 
+                      ? 'border-green-500 shadow-lg shadow-green-500/10' 
+                      : 'border-slate-200 dark:border-[#2a3c3c] hover:border-green-500/50'
+                  }`}
+                  onClick={() => setFilter('replied')}
+                >
+                  <div className="flex items-center gap-3 mb-2">
+                    <span className="material-symbols-outlined text-green-500">check_circle</span>
+                    <span className="text-sm font-medium text-slate-500 dark:text-slate-400">Replied</span>
+                  </div>
+                  <div className="text-2xl font-black text-green-500">{stats.replied}</div>
+                </div>
+                
+                <div 
+                  className={`bg-white dark:bg-[#1a2c2c] rounded-2xl p-5 border cursor-pointer transition-all ${
+                    filter === 'unreplied' 
+                      ? 'border-amber-500 shadow-lg shadow-amber-500/10' 
+                      : 'border-slate-200 dark:border-[#2a3c3c] hover:border-amber-500/50'
+                  }`}
+                  onClick={() => setFilter('unreplied')}
+                >
+                  <div className="flex items-center gap-3 mb-2">
+                    <span className="material-symbols-outlined text-amber-500">pending</span>
+                    <span className="text-sm font-medium text-slate-500 dark:text-slate-400">Pending Reply</span>
+                  </div>
+                  <div className="text-2xl font-black text-amber-500">{stats.unreplied}</div>
+                </div>
+              </div>
+
+              {/* Search and Filters */}
+              <div className="bg-white dark:bg-[#1a2c2c] rounded-2xl p-4 border border-slate-200 dark:border-[#2a3c3c] shadow-sm mb-6">
+                <div className="flex flex-col md:flex-row gap-4">
+                  <div className="flex-1">
+                    <label className="flex w-full items-center h-12 rounded-xl bg-slate-50 dark:bg-[#152626] px-4 border border-slate-200 dark:border-[#2a3c3c] focus-within:ring-2 focus-within:ring-primary/50 transition-shadow">
+                      <span className="material-symbols-outlined text-slate-400 mr-3">search</span>
+                      <input 
+                        className="w-full bg-transparent border-none text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:ring-0 p-0 font-medium" 
+                        placeholder="Search by patient name or content..." 
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                      />
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              {/* Reviews List */}
+              <div className="space-y-4">
+                {loading ? (
+                  <div className="space-y-4">
+                    {[1, 2, 3].map(i => (
+                      <div key={i} className="animate-pulse bg-white dark:bg-[#1a2c2c] h-48 rounded-2xl border border-slate-200 dark:border-[#2a3c3c]"></div>
+                    ))}
+                  </div>
+                ) : filteredReviews.length > 0 ? (
+                  filteredReviews.map((review) => (
+                    <ReviewCard 
+                      key={review.id} 
+                      data={review} 
+                      onReply={() => setReplyModal({ isOpen: true, review })}
+                    />
+                  ))
+                ) : (
+                  <div className="text-center py-16 bg-white dark:bg-[#1a2c2c] rounded-2xl border border-slate-200 dark:border-[#2a3c3c]">
+                    <span className="material-symbols-outlined text-6xl text-slate-300 dark:text-slate-600 mb-4">inbox</span>
+                    <h3 className="text-lg font-bold text-slate-700 dark:text-slate-300 mb-2">
+                      No feedback found
+                    </h3>
+                    <p className="text-slate-500 dark:text-slate-400 text-sm">
+                      {filter === 'unreplied' 
+                        ? "Great job! You've replied to all feedback." 
+                        : "No patient feedback matches your search."}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Pro Tip Card */}
+              {stats.unreplied > 0 && (
+                <div className="mt-8 bg-gradient-to-br from-[#102222] to-[#1a3c3c] rounded-2xl p-6 text-white relative overflow-hidden">
+                  <div className="absolute -right-4 -top-4 size-24 bg-primary/20 rounded-full blur-xl"></div>
+                  <div className="relative z-10 flex items-start gap-4">
+                    <div className="shrink-0 size-12 rounded-xl bg-primary/20 flex items-center justify-center">
+                      <span className="material-symbols-outlined text-primary text-2xl">lightbulb</span>
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-lg mb-1">Pro Tip: Engage with Your Patients</h3>
+                      <p className="text-gray-300 text-sm leading-relaxed mb-3">
+                        Responding to patient feedback increases trust and retention. Take a moment to acknowledge 
+                        their questions and provide thoughtful guidance.
+                      </p>
+                      <div className="flex items-center gap-2 text-primary text-sm font-medium">
+                        <span>{stats.unreplied} pending replies</span>
+                        <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </main>
       </div>
+
+      {/* Reply Modal */}
+      {replyModal.isOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="relative w-full max-w-2xl bg-white dark:bg-[#1a2c2c] rounded-2xl shadow-2xl border border-gray-100 dark:border-[#2a3c3c]">
+            <div className="flex items-center justify-between p-6 border-b border-gray-100 dark:border-[#2a3c3c]">
+              <h2 className="text-xl font-bold text-slate-900 dark:text-white">Reply to Patient</h2>
+              <button 
+                onClick={() => setReplyModal({ isOpen: false, review: null })}
+                className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-[#253636] text-gray-500"
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+            
+            <div className="p-6">
+              {replyModal.review && (
+                <div className="mb-6 p-4 bg-slate-50 dark:bg-[#152626] rounded-xl">
+                  <div className="flex items-center gap-3 mb-3">
+                    {replyModal.review.avatarUrl ? (
+                      <img src={replyModal.review.avatarUrl} alt="" className="size-10 rounded-full" />
+                    ) : (
+                      <div className={`size-10 rounded-full ${replyModal.review.avatarColor} flex items-center justify-center ${replyModal.review.textColor} font-bold text-sm`}>
+                        {replyModal.review.initials}
+                      </div>
+                    )}
+                    <div>
+                      <h4 className="font-semibold text-slate-900 dark:text-white">{replyModal.review.name}</h4>
+                      <span className="text-xs text-slate-500">{replyModal.review.consultation}</span>
+                    </div>
+                  </div>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">{replyModal.review.content}</p>
+                </div>
+              )}
+              
+              <textarea
+                className="w-full h-32 p-4 bg-slate-50 dark:bg-[#152626] border border-slate-200 dark:border-[#2a3c3c] rounded-xl text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:ring-2 focus:ring-primary/50 focus:border-primary resize-none"
+                placeholder="Write your professional response..."
+                value={replyContent}
+                onChange={(e) => setReplyContent(e.target.value)}
+              />
+              
+              <div className="flex justify-end gap-3 mt-4">
+                <button
+                  onClick={() => setReplyModal({ isOpen: false, review: null })}
+                  className="px-5 py-2.5 rounded-xl text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-[#253636] transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleReply}
+                  disabled={!replyContent.trim() || submitting}
+                  className="px-5 py-2.5 rounded-xl text-sm font-bold bg-primary text-med-dark hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center gap-2"
+                >
+                  {submitting ? (
+                    <>
+                      <span className="animate-spin material-symbols-outlined text-lg">progress_activity</span>
+                      Sending...
+                    </>
+                  ) : (
+                    <>
+                      <span className="material-symbols-outlined text-lg">send</span>
+                      Send Reply
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <ToastContainer />
     </div>
   );
 };

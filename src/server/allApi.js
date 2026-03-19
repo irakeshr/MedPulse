@@ -27,8 +27,8 @@ export const updateProfile = async (reqBody) => {
 export const getUserProfile = async () => {
   return await CommonApi("GET", `${SERVER_URL}/user/get-profile`);
 };
-export const fetchAllDoctors = async () => {
-  return await CommonApi("GET", `${SERVER_URL}/user/get-allDoctors`);
+export const fetchAllDoctors = async (queryParams = '') => {
+  return await CommonApi("GET", `${SERVER_URL}/user/get-allDoctors${queryParams}`);
 };
 export const fetchOneDoctor = async (doctorId) => {
   return await CommonApi("GET", `${SERVER_URL}/user/${doctorId}/get-OneDoctor`);
@@ -174,4 +174,66 @@ export const getPaymentDetails = async (sessionId) => {
 
 export const verifyPaymentStatus = async (sessionId) => {
   return await CommonApi("GET", `${SERVER_URL}/payment/${sessionId}`);
+};
+
+// Doctor Saved Cases API
+export const getSolvedCasesApi = async () => {
+  return await CommonApi("GET", `${SERVER_URL}/doctor/solved-cases`);
+};
+
+export const saveCaseApi = async (postId) => {
+  return await CommonApi("POST", `${SERVER_URL}/doctor/save-case/${postId}`);
+};
+
+export const removeCaseApi = async (postId) => {
+  return await CommonApi("DELETE", `${SERVER_URL}/doctor/remove-case/${postId}`);
+};
+
+export const respondToPostApi = async (postId, content) => {
+  return await CommonApi("POST", `${SERVER_URL}/doctor/posts/${postId}/respond`, { content });
+};
+
+export const resolvePostApi = async (postId) => {
+  return await CommonApi("PUT", `${SERVER_URL}/doctor/posts/${postId}/resolve`);
+};
+
+// Career APIs
+export const getAllCareersApi = async (queryParams = '') => {
+  return await CommonApi("GET", `${SERVER_URL}/careers${queryParams}`);
+};
+
+export const getCareerByIdApi = async (careerId) => {
+  return await CommonApi("GET", `${SERVER_URL}/careers/${careerId}`);
+};
+
+export const applyToCareerApi = async (careerId, applicationData) => {
+  return await CommonApi("POST", `${SERVER_URL}/careers/${careerId}/apply`, applicationData);
+};
+
+export const getAllCareersAdminApi = async () => {
+  return await CommonApi("GET", `${SERVER_URL}/careers/admin/all`);
+};
+
+export const createCareerApi = async (careerData) => {
+  return await CommonApi("POST", `${SERVER_URL}/careers`, careerData);
+};
+
+export const updateCareerApi = async (careerId, careerData) => {
+  return await CommonApi("PUT", `${SERVER_URL}/careers/${careerId}`, careerData);
+};
+
+export const deleteCareerApi = async (careerId) => {
+  return await CommonApi("DELETE", `${SERVER_URL}/careers/${careerId}`);
+};
+
+export const getCareerApplicationsApi = async (careerId) => {
+  return await CommonApi("GET", `${SERVER_URL}/careers/${careerId}/applications`);
+};
+
+export const updateApplicationStatusApi = async (careerId, applicationId, status) => {
+  return await CommonApi("PUT", `${SERVER_URL}/careers/${careerId}/applications/${applicationId}`, { status });
+};
+
+export const deleteApplicationApi = async (careerId, applicationId) => {
+  return await CommonApi("DELETE", `${SERVER_URL}/careers/${careerId}/applications/${applicationId}`);
 };

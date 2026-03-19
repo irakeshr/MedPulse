@@ -1,33 +1,62 @@
 import React, { useEffect } from "react";
 import { useState } from "react";
-import { getAllDoctorsProfile } from "../../server/allApi";
+import { getAllDoctorsProfile, VerifyDoctor } from "../../server/allApi";
 import { formatDistanceToNow, isValid } from "date-fns";
-import { useSelector, useDispatch } from "react-redux";
+import { toast } from "react-toastify";
+import CustomToast from "../../components/CustomToast";
+import { useNavigate } from "react-router-dom";
 
 export default function AdminDashboard() {
-  const dispatch = useDispatch();
+  const navigate = useNavigate();
   const [doctorProfile, setDoctorProfile] = useState([]);
   const [StatusCount, setStatusCount] = useState(null);
   const [totalCount, setTotalCount] = useState(null);
 
-  
+  const fetchDoctorProfile = async () => {
+    try {
+      const respond = await getAllDoctorsProfile();
+      console.log(respond);
+      setDoctorProfile(respond.data.doctors);
+      setTotalCount(respond.data.userCount)
+      setStatusCount(respond.data.statusCount);
+    } catch (error) {
+      console.error("Error fetching doctor profiles:", error);
+    }
+  };
+
   useEffect(() => {
-    const fetchDoctorProfile = async () => {
-      try {
-        const respond = await getAllDoctorsProfile();
-        console.log(respond);
-        setDoctorProfile(respond.data.doctors);
-        setTotalCount(respond.data.userCount)
-        setStatusCount(respond.data.statusCount);
-        // Assuming the doctors array is in respond.data.doctors
-      } catch (error) {
-        console.error("Error fetching doctor profiles:", error);
-      }
-    };
     fetchDoctorProfile();
-    
   }, []);
-console.log(totalCount)
+
+  const handleVerification = async (doctorId, status) => {
+    try {
+      const respond = await VerifyDoctor(doctorId, { status });
+      if (respond.status === 200) {
+        toast(
+          <CustomToast
+            title={`Doctor ${status}`}
+            message={respond?.data?.message}
+            type={status === "verified" ? "success" : "error"}
+          />
+        );
+        fetchDoctorProfile();
+      }
+    } catch (error) {
+      toast(
+        <CustomToast
+          title="Error"
+          message={error?.response?.data?.message || "An error occurred"}
+          type="error"
+        />
+      );
+    }
+  };
+
+  const handleViewDetails = (doctor) => {
+    navigate("/admin/verification", { state: { doctor } });
+  };
+
+  console.log(totalCount)
  
 
   return (
@@ -191,7 +220,7 @@ console.log(totalCount)
                               ></div>
                               <div>
                                 <div className="font-semibold text-med-dark dark:text-white">
-                                  {value.fullName}
+                                  {value.displayName}
                                 </div>
                                 <div className="text-xs text-med-text-secondary">
                                   {" "}
@@ -220,6 +249,7 @@ console.log(totalCount)
                               <button
                                 className="p-1.5 rounded-lg text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20"
                                 title="Approve"
+                                onClick={() => handleVerification(value._id, "verified")}
                               >
                                 <span className="material-symbols-outlined text-[20px]">
                                   check_circle
@@ -228,6 +258,7 @@ console.log(totalCount)
                               <button
                                 className="p-1.5 rounded-lg text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
                                 title="Reject"
+                                onClick={() => handleVerification(value._id, "rejected")}
                               >
                                 <span className="material-symbols-outlined text-[20px]">
                                   cancel
@@ -236,6 +267,7 @@ console.log(totalCount)
                               <button
                                 className="p-1.5 rounded-lg text-med-text-secondary hover:bg-gray-100 dark:hover:bg-gray-800"
                                 title="View Details"
+                                onClick={() => handleViewDetails(value)}
                               >
                                 <span className="material-symbols-outlined text-[20px]">
                                   visibility

@@ -70,18 +70,22 @@ export default function MyPostsPage() {
      apiData.append('title', formData.title);
      apiData.append('description', formData.description);
      apiData.append('stream', formData.stream);
-     apiData.append('isAnonymous', formData.isAnonymous);
-     apiData.append('tags', formData.tags); // Arrays appended directly might need JSON.stringify or loop depending on backend, but controller splits string so comma-join or standard append works
-     // Note: Backend splits tags by comma if string, so array.join() or loop? FormData handles arrays by appending multiple values with same key or one value.
-     // Controller line: post.tags = tags ? (Array.isArray(tags) ? tags : tags.split(',')) : post.tags;
-     // Frontend sends array. Let's send as JSON string or comma separated if we can.
-     // Safest for FormData with this backend logic:
-     // If backend accepts array (Express doesn't auto-parse FormData arrays deeply without explicit handling), sending as comma-separated string is safer if backend supports it.
+     apiData.append('severity', formData.severity || "Mild");
+     apiData.append('isAnonymous', String(formData.isAnonymous));
+     apiData.append("includeLocation", formData.includeLocation);
+     apiData.append("location", formData.location || "");
      
-     // But wait, axios + multer handles standard FormData. 
-     // Let's just append normally.
+     // Handle tags
+     if (Array.isArray(formData.tags)) {
+       formData.tags.forEach((tag) => apiData.append("tags[]", tag));
+     }
      
-     if (formData.image) apiData.append('image', formData.image);
+     // Handle multiple images
+     if (formData.images && formData.images.length > 0) {
+       formData.images.forEach((image) => {
+         apiData.append("images", image);
+       });
+     }
      
      // Toast handled in form? No, let's handle here.
     const loadingToast = toast.loading("Updating post...");
