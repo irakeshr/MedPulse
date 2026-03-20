@@ -12,6 +12,20 @@ export const userLogin = async (reqBody) => {
 export const userGoogleLogin = async (reqBody) => {
   return await CommonApi("POST", `${SERVER_URL}/auth/googleLogin`, reqBody);
 };
+
+// OTP Auth APIs
+export const sendOTPApi = async (reqBody) => {
+  return await CommonApi("POST", `${SERVER_URL}/auth/otp/send-otp`, reqBody);
+};
+
+export const verifyOTPApi = async (reqBody) => {
+  return await CommonApi("POST", `${SERVER_URL}/auth/otp/verify-otp`, reqBody);
+};
+
+export const resendOTPApi = async (reqBody) => {
+  return await CommonApi("POST", `${SERVER_URL}/auth/otp/resend-otp`, reqBody);
+};
+
 export const tokenValidation = async () => {
   return await CommonApi("GET", `${SERVER_URL}/auth/validate-token`);
 };
@@ -236,4 +250,33 @@ export const updateApplicationStatusApi = async (careerId, applicationId, status
 
 export const deleteApplicationApi = async (careerId, applicationId) => {
   return await CommonApi("DELETE", `${SERVER_URL}/careers/${careerId}/applications/${applicationId}`);
+};
+
+// Contact Form APIs
+export const submitContactApi = async (reqBody) => {
+  return await CommonApi("POST", `${SERVER_URL}/contact/submit`, reqBody);
+};
+
+export const getAllContactsApi = async (queryParams = '') => {
+  return await CommonApi("GET", `${SERVER_URL}/contact/admin/all${queryParams}`);
+};
+
+export const getContactByIdApi = async (contactId) => {
+  return await CommonApi("GET", `${SERVER_URL}/contact/admin/${contactId}`);
+};
+
+export const updateContactStatusApi = async (contactId, reqBody) => {
+  return await CommonApi("PUT", `${SERVER_URL}/contact/admin/${contactId}`, reqBody);
+};
+
+export const addContactNoteApi = async (contactId, note) => {
+  return await CommonApi("POST", `${SERVER_URL}/contact/admin/${contactId}/notes`, { note });
+};
+
+export const deleteContactApi = async (contactId) => {
+  return await CommonApi("DELETE", `${SERVER_URL}/contact/admin/${contactId}`);
+};
+
+export const getAllJobApplicationsApi = async (queryParams = '') => {
+  return await CommonApi("GET", `${SERVER_URL}/contact/admin/applications/all${queryParams}`);
 };

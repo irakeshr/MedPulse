@@ -1,17 +1,34 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useSelector,useDispatch } from "react-redux";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { setSearchKey } from "../../redux/postSlice";
 import { NotificationBell } from "../../components/Notifications";
+import { logout } from "../../redux/authSlice";
 
 export default function Header() {
   const {profile}=useSelector((state)=>state.userDetail)
   const profileImage=profile?.patientProfile?.profileImage;
   const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const [showDropdown, setShowDropdown] = useState(false);
+  const dropdownRef = useRef(null);
+  const displayName = profile?.patientProfile?.displayName;
  
-  // --- STATE ---
-  // Mock Auth State (Replace with your auth context later)
-  const [isLoggedIn, setIsLoggedIn] = useState(true); 
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    dispatch(logout());
+    navigate("/");
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []); 
 
   // Dark Mode Logic
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -98,27 +115,49 @@ useEffect(() => {
           </button>
 
           {/* Notifications (Only if Logged In) */}
-          {isLoggedIn && <NotificationBell />}
+          <NotificationBell />
 
-          {/* Auth State Switch */}
-          {isLoggedIn ? (
-            // User Menu (If Logged In)
+          {/* User Menu with Dropdown */}
+          <div className="relative" ref={dropdownRef}>
             <div
               className="bg-center bg-no-repeat bg-cover rounded-full size-9 border-2 border-white dark:border-[#1a2c2c] ring-2 ring-primary/20 cursor-pointer ml-1"
               style={{ backgroundImage: `url("${profileImage}")` }}
-              onClick={() => setIsLoggedIn(false)} // Temp: Click to Logout
-              title="Click to Logout (Test)"
+              onClick={() => setShowDropdown(!showDropdown)}
+              title="Account"
             ></div>
-          ) : (
-            // Login Button (If Logged Out)
-            <Link 
-              to="/"
-              onClick={() => setIsLoggedIn(true)} // Temp: Click to Login
-              className="ml-2 px-5 py-2 bg-primary hover:bg-primary/90 text-med-dark font-semibold text-sm rounded-xl transition-all shadow-sm shadow-primary/20"
-            >
-              Log In
-            </Link>
-          )}
+            
+            {showDropdown && (
+              <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-[#1a2c2c] rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden z-50">
+                <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
+                  <p className="text-sm font-semibold text-med-dark dark:text-white">{displayName}</p>
+                  <p className="text-xs text-med-text-secondary dark:text-gray-400">Patient</p>
+                </div>
+                <Link
+                  to="/profile"
+                  className="flex items-center gap-2 px-4 py-2.5 text-sm text-med-dark dark:text-white hover:bg-gray-50 dark:hover:bg-[#253636] transition-colors"
+                  onClick={() => setShowDropdown(false)}
+                >
+                  <span className="material-symbols-outlined text-lg">person</span>
+                  My Profile
+                </Link>
+                <Link
+                  to="/saved"
+                  className="flex items-center gap-2 px-4 py-2.5 text-sm text-med-dark dark:text-white hover:bg-gray-50 dark:hover:bg-[#253636] transition-colors"
+                  onClick={() => setShowDropdown(false)}
+                >
+                  <span className="material-symbols-outlined text-lg">bookmark</span>
+                  Saved Posts
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                >
+                  <span className="material-symbols-outlined text-lg">logout</span>
+                  Logout
+                </button>
+              </div>
+            )}
+          </div>
 
         </div>
       </div>

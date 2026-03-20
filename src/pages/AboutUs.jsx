@@ -33,8 +33,8 @@ const AboutUs = () => {
   ];
 
   return (
-    <div className="pt-24 pb-20">
-        <section className="max-w-7xl mx-auto px-6 py-16 md:py-24">
+    <div className="pt-8 pb-20">
+        <section className="max-w-7xl  mx-auto px-6 py-20 md:py-24">
           <div className="max-w-3xl">
             <span className="inline-block px-4 py-1.5 rounded-full bg-[#76f3ea] text-[#002204] text-xs font-bold mb-6 tracking-wider uppercase">
               Our Mission
@@ -49,7 +49,7 @@ const AboutUs = () => {
           </div>
         </section>
 
-        <section className="max-w-7xl mx-auto px-6 mb-32">
+        <section className="max-w-7xl mx-auto pt-15 px-6 mb-32">
           <div className="grid grid-cols-12 gap-8">
             <div className="col-span-12 md:col-span-8 bg-surface-container-lowest dark:bg-[#1a2c2c] rounded-xl p-10 md:p-14 relative overflow-hidden group">
               <div className="relative z-10">

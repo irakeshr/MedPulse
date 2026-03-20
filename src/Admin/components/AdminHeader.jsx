@@ -1,10 +1,21 @@
 import React from 'react';
-import { useState,useEffect } from 'react';
+import { useState,useEffect, useRef } from 'react';
+import { useDispatch } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
+import { logout } from '../../redux/authSlice';
 
 const AdminHeader = () => {
-
+      const dispatch = useDispatch();
+      const navigate = useNavigate();
+      const [showDropdown, setShowDropdown] = useState(false);
+      const dropdownRef = useRef(null);
      
-    
+      const handleLogout = () => {
+        localStorage.removeItem("token");
+        dispatch(logout());
+        navigate("/");
+      };
+     
       // Dark Mode Logic
       const [isDarkMode, setIsDarkMode] = useState(false);
     
@@ -17,6 +28,16 @@ const AdminHeader = () => {
           setIsDarkMode(false);
           document.documentElement.classList.remove('dark');
         }
+      }, []);
+    
+      useEffect(() => {
+        const handleClickOutside = (event) => {
+          if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+            setShowDropdown(false);
+          }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
       }, []);
     
       const toggleDarkMode = () => {
@@ -71,12 +92,40 @@ const AdminHeader = () => {
               {isDarkMode ? 'light_mode' : 'dark_mode'}
             </span>
           </button>
-          <div className="flex items-center gap-3 pl-2 border-l border-gray-200 dark:border-gray-700">
-            <div className="text-right hidden sm:block">
-              <p className="text-sm font-bold text-med-dark dark:text-white">Admin User</p>
-              <p className="text-xs text-med-text-secondary">Super Admin</p>
+          
+          {/* User Menu with Dropdown */}
+          <div className="relative" ref={dropdownRef}>
+            <div className="flex items-center gap-3 pl-2 border-l border-gray-200 dark:border-gray-700 cursor-pointer" onClick={() => setShowDropdown(!showDropdown)}>
+              <div className="text-right hidden sm:block">
+                <p className="text-sm font-bold text-med-dark dark:text-white">Admin User</p>
+                <p className="text-xs text-med-text-secondary">Super Admin</p>
+              </div>
+              <div className="bg-center bg-no-repeat bg-cover rounded-full size-10 border-2 border-primary" style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuCOLCviMOpASErCHhTQmvY6k34iYjPPoNBtTcXTevn6qvSVudTEwgQtFPiNSM2fdDYS95FtRj0VMuJZ2MhrCv7Je5qakn_Yo9VwsJIEKLLds3-whsOamhqUK47VWjCFw35W61E_-AWBjonf9A9fdwikxOiALd27cPTkB7PAhHRgG7d4ltlHxF__DTRS_15qNAHrVAhOQk3p2mBzmH7Uum18DB5Z6Ck4VDoIjknvWcW0y9wVdlHYF1a23BsjBnqQBRNl__52tiym3xU")' }}></div>
             </div>
-            <div className="bg-center bg-no-repeat bg-cover rounded-full size-10 border-2 border-primary cursor-pointer" style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuCOLCviMOpASErCHhTQmvY6k34iYjPPoNBtTcXTevn6qvSVudTEwgQtFPiNSM2fdDYS95FtRj0VMuJZ2MhrCv7Je5qakn_Yo9VwsJIEKLLds3-whsOamhqUK47VWjCFw35W61E_-AWBjonf9A9fdwikxOiALd27cPTkB7PAhHRgG7d4ltlHxF__DTRS_15qNAHrVAhOQk3p2mBzmH7Uum18DB5Z6Ck4VDoIjknvWcW0y9wVdlHYF1a23BsjBnqQBRNl__52tiym3xU")' }}></div>
+            
+            {showDropdown && (
+              <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-[#1a2c2c] rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden z-50">
+                <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
+                  <p className="text-sm font-semibold text-med-dark dark:text-white">Admin User</p>
+                  <p className="text-xs text-med-text-secondary dark:text-gray-400">Super Admin</p>
+                </div>
+                <a
+                  href="/admin/settings"
+                  className="flex items-center gap-2 px-4 py-2.5 text-sm text-med-dark dark:text-white hover:bg-gray-50 dark:hover:bg-[#253636] transition-colors"
+                  onClick={() => setShowDropdown(false)}
+                >
+                  <span className="material-symbols-outlined text-lg">settings</span>
+                  Settings
+                </a>
+                <button
+                  onClick={handleLogout}
+                  className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                >
+                  <span className="material-symbols-outlined text-lg">logout</span>
+                  Logout
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
