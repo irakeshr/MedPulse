@@ -25,8 +25,7 @@ const HomePage = () => {
   style={{ width: "auto", background: "none", boxShadow: "none" }} 
 />
             <div className="bg-background-light dark:bg-background-dark text-med-dark dark:text-white font-display overflow-x-hidden transition-colors duration-200 min-h-screen flex flex-col">
-
-      <Header/>
+ 
   
   <main className="flex-1 flex flex-col lg:flex-row items-center justify-center px-4 sm:px-6 lg:px-12 py-8 lg:py-0 max-w-[1440px] mx-auto w-full gap-12 lg:gap-20">
     <div className="hidden lg:flex flex-col justify-center flex-1 max-w-xl">
