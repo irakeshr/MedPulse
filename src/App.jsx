@@ -28,6 +28,8 @@ import AdminModeration from './Admin/pages/AdminModeration';
 import AdminTopics from './Admin/pages/AdminTopics';
 import AdminSettings from './Admin/pages/AdminSettings';
 import AdminCareers from './Admin/pages/AdminCareers';
+import AdminApplications from './Admin/pages/AdminApplications';
+import AdminInquiries from './Admin/pages/AdminInquiries';
 import ProtectedAdmin from './routes/ProtectedAdmin';
 import RoleSelection from './components/RoleSelection';
 import AppointmentBooking from './User/pages/AppointmentBooking';
@@ -35,6 +37,10 @@ import PaymentSuccess from './User/pages/PaymentSuccess';
 import PaymentFailed from './User/pages/PaymentFailed';
 import MyAppointments from './User/pages/MyAppointments';
 import CareerPage from './pages/CareerPage';
+import AboutUs from './pages/AboutUs';
+import ContactPage from './pages/ContactPage';
+import HelpCenterPage from './pages/HelpCenterPage';
+import PublicLayout from './layouts/PublicLayout';
 import { ToastContainer } from 'react-toastify';
 
 const App = () => {
@@ -45,11 +51,16 @@ const App = () => {
       <Routes>
 
       {/* PUBLIC ROUTE (Login + Register) */}
-      <Route path="/" element={<HomePage />} />
-      <Route path="/careers" element={<CareerPage />} />
+      <Route element={<PublicLayout />}>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/careers" element={<CareerPage />} />
+        <Route path="/about" element={<AboutUs />} />
+        <Route path="/contact" element={<ContactPage />} />
+        <Route path="/help" element={<HelpCenterPage />} />
+      </Route>
       <Route path="/role-selection/:emailID" element={<RoleSelection/>} />
       <Route path="/payment-success" element={<PaymentSuccess />} />
-          <Route path="/payment-failed" element={<PaymentFailed  />} />
+      <Route path="/payment-failed" element={<PaymentFailed />} />
 
       {/* PROTECTED USER ROUTES */}
       <Route element={<ProtectedRoute />}>
@@ -99,7 +110,9 @@ const App = () => {
  <Route path="/admin/moderation" element={<AdminModeration/>} />
   <Route path="/admin/topics" element={<AdminTopics/>} />
   <Route path="/admin/careers" element={<AdminCareers/>} />
-  <Route path="/admin/settings" element={<AdminSettings/>} />
+  <Route path="/admin/applications" element={<AdminApplications/>} />
+  <Route path="/admin/inquiries" element={<AdminInquiries/>} />
+   <Route path="/admin/settings" element={<AdminSettings/>} />
  
  
  </Route>  

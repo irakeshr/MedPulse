@@ -8,6 +8,7 @@ import { loginSuccess, setUser } from "../../redux/authSlice";
 import { GoogleLogin } from "@react-oauth/google";
 import { jwtDecode } from "jwt-decode";
 import CustomToast from "../../components/CustomToast";
+import OTPLogin from "./OTPInput";
 
 const Login = ({ setRegisterPage }) => {
   const dispatch = useDispatch();
@@ -16,8 +17,10 @@ const Login = ({ setRegisterPage }) => {
     email: "",
     password: "",
   });
- 
   const [showPassword, setShowPassword] = useState(false);
+  const [loginMode, setLoginMode] = useState("password");
+  const [otpEmail, setOtpEmail] = useState("");
+  const [emailValidation, setEmailValidation] = useState({ loading: false, error: "" });
 
   // Google Auth
 
@@ -159,6 +162,10 @@ const Login = ({ setRegisterPage }) => {
     }
   };
 
+  if (loginMode === "otp") {
+    return <OTPLogin email={otpEmail} onBack={() => setLoginMode("password")} />;
+  }
+
   return (
     <div>
       <div className="relative z-10 w-full max-w-[440px] bg-white dark:bg-[#1a2c2c] rounded-2xl shadow-xl border border-gray-100 dark:border-[#2a3838] overflow-hidden">
@@ -191,7 +198,7 @@ const Login = ({ setRegisterPage }) => {
               className="text-xs font-semibold text-med-text-secondary dark:text-gray-400 uppercase tracking-wider ml-1"
               htmlFor="email"
             >
-              Email or Username
+              Email
             </label>
             <div className="relative group">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -253,12 +260,21 @@ const Login = ({ setRegisterPage }) => {
                 Remember me
               </span>
             </label>
-            <a
-              className="font-semibold text-primary hover:text-primary/80 transition-colors"
-              href="#"
+            <button
+              type="button"
+              disabled={!loginDetails.email || !loginDetails.email.includes("@")}
+              onClick={() => {
+                setOtpEmail(loginDetails.email);
+                setLoginMode("otp");
+              }}
+              className={`font-semibold transition-colors ${
+                loginDetails.email && loginDetails.email.includes("@")
+                  ? "text-primary hover:text-primary/80"
+                  : "text-gray-400 cursor-not-allowed"
+              }`}
             >
-              Forgot Password?
-            </a>
+              Login with OTP
+            </button>
           </div>
           <button
             className="w-full bg-primary hover:bg-[#0fdbdb] text-med-dark font-bold text-sm py-3.5 rounded-xl shadow-lg shadow-primary/20 hover:shadow-primary/30 active:scale-[0.98] transition-all duration-200 mt-2"

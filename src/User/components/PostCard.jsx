@@ -23,7 +23,9 @@ const PostCard = ({ post, isOwnPost = false, onEdit, onDelete }) => {
   // --- STATE & SELECTORS ---
   const [showComments, setShowComments] = useState(false);
   const [newComment, setNewComment] = useState("");
-  const [menuOpen, setMenuOpen] = useState(false); // Dropdown Menu State
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
   
   // --- DELETE STATE ---
   const [isDeleting, setIsDeleting] = useState(false);
@@ -355,12 +357,140 @@ try {
 
         {/* image section */}
         {post.images && post.images.length > 0 && (
-          <div className="mt-3">
-            <img
-              src={post.images[0]}
-              alt="Post visualization"
-              className="w-full h-64 object-cover rounded-xl border border-gray-100 dark:border-[#2a3838]"
-            />
+          <div className="mt-3 relative">
+            <div 
+              className="relative overflow-hidden rounded-xl border border-gray-100 dark:border-[#2a3838] cursor-pointer"
+              onClick={() => setLightboxOpen(true)}
+            >
+              <div 
+                className="flex transition-transform duration-300 ease-out"
+                style={{ transform: `translateX(-${currentImageIndex * 100}%)` }}
+              >
+                {post.images.map((image, index) => (
+                  <img
+                    key={index}
+                    src={image}
+                    alt={`Post visualization ${index + 1}`}
+                    className="w-full h-64 object-cover flex-shrink-0"
+                  />
+                ))}
+              </div>
+              
+              {post.images.length > 1 && (
+                <>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCurrentImageIndex((prev) => (prev === 0 ? post.images.length - 1 : prev - 1));
+                    }}
+                    className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-lg">chevron_left</span>
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCurrentImageIndex((prev) => (prev === post.images.length - 1 ? 0 : prev + 1));
+                    }}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-lg">chevron_right</span>
+                  </button>
+                </>
+              )}
+            </div>
+
+            {post.images.length > 1 && (
+              <div className="flex justify-center gap-1.5 mt-2">
+                {post.images.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setCurrentImageIndex(index)}
+                    className={`w-2 h-2 rounded-full transition-all ${
+                      index === currentImageIndex 
+                        ? "bg-primary w-4" 
+                        : "bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500"
+                    }`}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Lightbox Modal */}
+        {lightboxOpen && post.images && (
+          <div 
+            className="fixed inset-0 z-[99999] bg-black/90 flex items-center justify-center"
+            onClick={() => setLightboxOpen(false)}
+          >
+            <button
+              onClick={() => setLightboxOpen(false)}
+              className="absolute top-4 right-4 text-white hover:text-gray-300 z-10"
+            >
+              <span className="material-symbols-outlined text-4xl">close</span>
+            </button>
+            
+            <div 
+              className="relative max-w-4xl max-h-[90vh] w-full mx-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div 
+                className="flex transition-transform duration-300 ease-out"
+                style={{ transform: `translateX(-${currentImageIndex * 100}%)` }}
+              >
+                {post.images.map((image, index) => (
+                  <img
+                    key={index}
+                    src={image}
+                    alt={`Post visualization ${index + 1}`}
+                    className="w-full h-auto max-h-[85vh] object-contain flex-shrink-0"
+                  />
+                ))}
+              </div>
+              
+              {post.images.length > 1 && (
+                <>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCurrentImageIndex((prev) => (prev === 0 ? post.images.length - 1 : prev - 1));
+                    }}
+                    className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-12 bg-black/50 hover:bg-black/70 text-white rounded-full p-3 transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-2xl">chevron_left</span>
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCurrentImageIndex((prev) => (prev === post.images.length - 1 ? 0 : prev + 1));
+                    }}
+                    className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-12 bg-black/50 hover:bg-black/70 text-white rounded-full p-3 transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-2xl">chevron_right</span>
+                  </button>
+                </>
+              )}
+            </div>
+
+            {post.images.length > 1 && (
+              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2">
+                {post.images.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCurrentImageIndex(index);
+                    }}
+                    className={`w-3 h-3 rounded-full transition-all ${
+                      index === currentImageIndex 
+                        ? "bg-white w-6" 
+                        : "bg-white/50 hover:bg-white/75"
+                    }`}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>

@@ -57,6 +57,16 @@ const AdminSidebar = () => {
           <span>Careers</span>
         </Link>
 
+        <Link to="/admin/applications" className={`flex items-center gap-3 px-4 py-3 rounded-xl ${active("/admin/applications")}`}>
+          <span className={`material-symbols-outlined ${activeIcon("/admin/applications")}`}>assignment_ind</span>
+          <span>Applications</span>
+        </Link>
+
+        <Link to="/admin/inquiries" className={`flex items-center gap-3 px-4 py-3 rounded-xl ${active("/admin/inquiries")}`}>
+          <span className={`material-symbols-outlined ${activeIcon("/admin/inquiries")}`}>mail</span>
+          <span>Contact Inquiries</span>
+        </Link>
+
         <Link to="/admin/settings" className={`flex items-center gap-3 px-4 py-3 rounded-xl ${active("/admin/settings")}`}>
           <span className={`material-symbols-outlined ${activeIcon("/admin/settings")}`}>settings</span>
           <span>Platform Settings</span>

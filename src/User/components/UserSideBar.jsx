@@ -78,24 +78,7 @@ const UserSideBar = () => {
       </div>
 
       {/* --- APPOINTMENTS QUICK CARD --- */}
-      <div className="mt-4 px-4">
-        <Link to="/my-appointments">
-          <div className={`bg-white dark:bg-[#1a2c2c] p-4 rounded-xl border ${active("/my-appointments").includes("bg-primary") ? "border-primary shadow-md" : "border-med-gray dark:border-[#2a3838] hover:border-primary/50"} cursor-pointer transition-all shadow-sm`}>
-            <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center size-12 rounded-full bg-blue-50 text-blue-500 dark:bg-blue-900/20 dark:text-blue-400">
-                <span className="material-symbols-outlined">event_available</span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <h4 className="text-sm font-bold text-med-dark dark:text-white">My Appointments</h4>
-                <p className="text-xs text-med-text-secondary dark:text-gray-400">
-                  {upcomingCount > 0 ? `${upcomingCount} upcoming visit${upcomingCount > 1 ? "s" : ""}` : "No upcoming visits"}
-                </p>
-              </div>
-              <span className="material-symbols-outlined text-med-text-secondary dark:text-gray-400">chevron_right</span>
-            </div>
-          </div>
-        </Link>
-      </div>
+      
 
       {/* --- HEALTH TAGS SECTION --- */}
       <div className="mt-4 px-4 pb-4">

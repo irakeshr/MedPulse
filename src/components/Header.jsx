@@ -14,10 +14,11 @@ const Header = () => {
     <Link to="/" className="text-xl font-bold tracking-tight text-med-dark dark:text-white">MedPulse</Link>
   </div>
   <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-med-text-secondary dark:text-gray-300">
-    <a className="hover:text-primary dark:hover:text-white transition-colors" href="#">About Us</a>
+    <Link to="/" className="hover:text-primary dark:hover:text-white transition-colors">Home</Link>
+    <Link to="/about" className="hover:text-primary dark:hover:text-white transition-colors">About Us</Link>
     <Link to="/careers" className="hover:text-primary dark:hover:text-white transition-colors">Careers</Link>
-    <a className="hover:text-primary dark:hover:text-white transition-colors" href="#">Contact</a>
-    <a className="hover:text-primary dark:hover:text-white transition-colors" href="#">Help Center</a>
+    <Link to="/contact" className="hover:text-primary dark:hover:text-white transition-colors">Contact</Link>
+    <Link to="/help" className="hover:text-primary dark:hover:text-white transition-colors">Help Center</Link>
   </nav>
 </header>
         </div>
