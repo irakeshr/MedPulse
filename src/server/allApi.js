@@ -280,3 +280,7 @@ export const deleteContactApi = async (contactId) => {
 export const getAllJobApplicationsApi = async (queryParams = '') => {
   return await CommonApi("GET", `${SERVER_URL}/contact/admin/applications/all${queryParams}`);
 };
+
+export const chatWithAssistantApi = async (message, history = [], userId = null) => {
+  return await CommonApi("POST", `${SERVER_URL}/chatbot/chat`, { message, history, userId });
+};

@@ -1,6 +1,7 @@
 import { Outlet } from "react-router-dom";
 import Header from "../components/Header"; 
 import UserSideBar from "../components/UserSideBar"; 
+import { ChatBotWithQuickQuestions } from "../components/ChatBot"; 
  import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 export default function AdminLayout() {
@@ -49,6 +50,8 @@ export default function AdminLayout() {
         {/* REMOVED: Right Sidebar Layout Block */}
 
       </div>
+
+      <ChatBotWithQuickQuestions />
     </div>
   );
 }
