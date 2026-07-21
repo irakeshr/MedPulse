@@ -91,18 +91,24 @@ const CareerPage = () => {
   const handleApply = async (e) => {
     e.preventDefault();
     if (!applicationForm.applicantName || !applicationForm.applicantEmail) {
-      toast.error('Name and email are required');
+      toast(
+        <CustomToast
+          title="Missing Fields"
+          message="Name and email are required"
+          type="warning"
+        />
+      );
       return;
     }
 
     try {
       setIsSubmitting(true);
       const res = await applyToCareerApi(selectedCareer._id, applicationForm);
-      if (res.status === 201) {
+      if (res.data?.success || res.status === 201) {
         toast(
           <CustomToast
             title="Application Submitted"
-            message="Your application has been successfully submitted!"
+            message="Your application has been successfully submitted. We'll be in touch soon!"
             type="success"
           />
         );
@@ -112,8 +118,8 @@ const CareerPage = () => {
     } catch (error) {
       toast(
         <CustomToast
-          title="Application Failed"
-          message={error.response?.data?.message || "Failed to submit application"}
+          title="Submission Failed"
+          message={error.response?.data?.message || "Failed to submit application. Please try again."}
           type="error"
         />
       );

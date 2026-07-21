@@ -52,7 +52,7 @@ const Register = ({ setLoginPage }) => {
     <div>
       <ToastContainer position="top-center" autoClose={3000} />
 
-      <div className="w-full max-w-md flex-none">
+      <div className="w-full max-w-md mt-10 mb-10 flex-none">
         <div className="bg-white dark:bg-[#1a2c2c] rounded-2xl shadow-sm border border-[#e5e7eb] dark:border-[#2a3838] p-6 sm:p-8">
           <div className="mb-3">
             <h2 className="text-2xl font-bold text-med-dark dark:text-white mb-2">

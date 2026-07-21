@@ -168,7 +168,7 @@ const Login = ({ setRegisterPage }) => {
 
   return (
     <div>
-      <div className="relative z-10 w-full max-w-[440px] bg-white dark:bg-[#1a2c2c] rounded-2xl shadow-xl border border-gray-100 dark:border-[#2a3838] overflow-hidden">
+      <div className="relative z-10 w-full mt-20 mb-20 max-w-[440px] bg-white dark:bg-[#1a2c2c] rounded-2xl shadow-xl border border-gray-100 dark:border-[#2a3838] overflow-hidden">
         <div className="pt-5 pb-2 px-8 flex flex-col items-center text-center">
           <div className="mb-6 bg-primary/10 p-3 rounded-full text-primary">
             <svg

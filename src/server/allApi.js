@@ -278,7 +278,7 @@ export const deleteContactApi = async (contactId) => {
 };
 
 export const getAllJobApplicationsApi = async (queryParams = '') => {
-  return await CommonApi("GET", `${SERVER_URL}/contact/admin/applications/all${queryParams}`);
+  return await CommonApi("GET", `${SERVER_URL}/careers/admin/applications/all${queryParams}`);
 };
 
 export const chatWithAssistantApi = async (message, history = [], userId = null) => {

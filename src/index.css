@@ -12,9 +12,61 @@
   --color-med-dark: #111818;
   --color-med-gray: #f0f4f4;
   --color-med-text-secondary: #618989;
-  
+
+  /* Stitch Design Colors */
+  --color-surface-bright: #f3fbfa;
+  --color-tertiary-container: #ffcf43;
+  --color-secondary-fixed-dim: #97d1d0;
+  --color-surface-container-highest: #dce4e3;
+  --color-secondary: #2c6767;
+  --color-on-surface-variant: #3b4a49;
+  --color-inverse-primary: #00dddd;
+  --color-on-secondary-fixed-variant: #0c4f4f;
+  --color-on-primary-container: #006767;
+  --color-surface: #f3fbfa;
+  --color-tertiary-fixed-dim: #efc135;
+  --color-surface-tint: #006a6a;
+  --color-surface-container-lowest: #ffffff;
+  --color-inverse-on-surface: #eaf2f1;
+  --color-secondary-container: #afeaea;
+  --color-secondary-fixed: #b2edec;
+  --color-error-container: #ffdad6;
+  --color-on-error: #ffffff;
+  --color-tertiary: #755b00;
+  --color-surface-container-high: #e2eae9;
+  --color-on-primary: #ffffff;
+  --color-on-background: #151d1d;
+  --color-primary-stitch: #006a6a;
+  --color-on-secondary: #ffffff;
+  --color-inverse-surface: #2a3232;
+  --color-surface-dim: #d3dcdb;
+  --color-on-tertiary: #ffffff;
+  --color-on-tertiary-container: #725800;
+  --color-surface-variant: #dce4e3;
+  --color-on-tertiary-fixed-variant: #594400;
+  --color-on-secondary-fixed: #002020;
+  --color-surface-container: #e7efef;
+  --color-on-surface: #151d1d;
+  --color-on-primary-fixed-variant: #004f4f;
+  --color-surface-container-low: #edf5f4;
+  --color-on-error-container: #93000a;
+  --color-tertiary-fixed: #ffdf91;
+  --color-on-primary-fixed: #002020;
+  --color-on-secondary-container: #316b6b;
+  --color-background: #f3fbfa;
+  --color-error: #ba1a1a;
+  --color-primary-fixed-dim: #00dddd;
+  --color-outline: #6a7a7a;
+  --color-outline-variant: #b9cac9;
+  --color-on-tertiary-fixed: #241a00;
+  --color-primary-fixed: #39fafa;
+  --color-primary-container: #13ecec;
+
   /* Font Family */
   --font-display: "Inter", "sans-serif";
+  --font-headline: "Manrope", "sans-serif";
+  --font-body: "Public Sans", "sans-serif";
+  --font-label: "Public Sans", "sans-serif";
   
   /* Border Radius */
   --radius-sm: 0.5rem;    /* DEFAULT in v3 becomes --radius-sm in v4 */
@@ -22,6 +74,38 @@
   --radius-xl: 1.5rem;
   --radius-2xl: 2rem;
   --radius-full: 9999px;
+}
+
+/* Stitch Utilities */
+.glass-header {
+  background: rgba(243, 251, 250, 0.8);
+  backdrop-filter: blur(20px);
+}
+
+.ambient-shadow {
+  box-shadow: 0 10px 40px -10px rgba(21, 29, 29, 0.06);
+}
+
+/* Custom Toastify Overrides */
+.Toastify__toast {
+  padding: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  min-height: auto !important;
+}
+
+.Toastify__toast-body {
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.Toastify__toast-container {
+  width: auto !important;
+  padding: 0 !important;
+}
+
+.Toastify__close-button {
+  display: none !important;
 }
 
 /* Dark mode theme overrides */
