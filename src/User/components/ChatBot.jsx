@@ -2,6 +2,90 @@ import React, { useState, useRef, useEffect } from "react";
 import { useSelector } from "react-redux";
 import { chatWithAssistantApi } from "../../server/allApi";
 
+// Simple markdown parser for chat messages
+const renderMarkdown = (text) => {
+  if (!text) return null;
+
+  const lines = text.split("\n");
+  const elements = [];
+  let listItems = [];
+  let listType = null;
+
+  const flushList = () => {
+    if (listItems.length > 0) {
+      const Tag = listType === "ol" ? "ol" : "ul";
+      elements.push(
+        <Tag key={`list-${elements.length}`} className="my-1 pl-4 space-y-0.5">
+          {listItems.map((item, i) => (
+            <li key={i} className="text-sm">{renderInline(item)}</li>
+          ))}
+        </Tag>
+      );
+      listItems = [];
+      listType = null;
+    }
+  };
+
+  const renderInline = (str) => {
+    // Bold: **text**
+    const parts = [];
+    let remaining = str;
+    let key = 0;
+    while (remaining.length > 0) {
+      const boldMatch = remaining.match(/\*\*(.+?)\*\*/);
+      if (boldMatch) {
+        const idx = remaining.indexOf(boldMatch[0]);
+        if (idx > 0) parts.push(<span key={key++}>{remaining.slice(0, idx)}</span>);
+        parts.push(<strong key={key++} className="font-bold">{boldMatch[1]}</strong>);
+        remaining = remaining.slice(idx + boldMatch[0].length);
+      } else {
+        parts.push(<span key={key++}>{remaining}</span>);
+        break;
+      }
+    }
+    return parts.length === 1 ? parts[0] : parts;
+  };
+
+  lines.forEach((line, i) => {
+    const trimmed = line.trim();
+
+    // Numbered list: 1. text or 1) text
+    const numberedMatch = trimmed.match(/^(\d+)[.)]\s+(.+)/);
+    if (numberedMatch) {
+      if (listType !== "ol") {
+        flushList();
+        listType = "ol";
+      }
+      listItems.push(numberedMatch[2]);
+      return;
+    }
+
+    // Bullet list: * text or - text
+    const bulletMatch = trimmed.match(/^[-*]\s+(.+)/);
+    if (bulletMatch) {
+      if (listType !== "ul") {
+        flushList();
+        listType = "ul";
+      }
+      listItems.push(bulletMatch[1]);
+      return;
+    }
+
+    // Empty line
+    if (trimmed === "") {
+      flushList();
+      return;
+    }
+
+    // Regular text
+    flushList();
+    elements.push(<p key={`p-${i}`} className="my-1">{renderInline(trimmed)}</p>);
+  });
+
+  flushList();
+  return elements;
+};
+
 const QUICK_QUESTIONS_GENERAL = [
   { icon: "health_and_safety", text: "General health tips" },
   { icon: "stethoscope", text: "When to see a doctor" },
@@ -65,7 +149,9 @@ const MessageBubble = ({ message }) => (
       {message.toolResults && message.toolResults.length > 0 && (
         <ToolResultIndicator tools={message.toolResults} />
       )}
-      <p className="whitespace-pre-wrap leading-relaxed">{message.content}</p>
+      <div className="leading-relaxed text-sm">
+        {renderMarkdown(message.content)}
+      </div>
     </div>
   </div>
 );
